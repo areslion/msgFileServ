@@ -16,34 +16,32 @@ const (
 	//CSTUpdate_dir = "/wsp/gotst/upload"
 	CSTPathSep = "\\"
 	CSTUpdate_dir = "E:"+CSTPathSep+"workspace"+CSTPathSep+"005.XNKJ"+CSTPathSep+"002.Project"+CSTPathSep+"004.GoWSP"+CSTPathSep+"servHttpFile"+CSTPathSep+"test"
-	
+	tpl = `<html>  
+	<head>  
+	<title>上传文件</title>  
+	</head>  
+	<body>  
+	<form enctype="multipart/form-data" action="/upload" method="post">  
+	<input type="file" name="uploadfile" />  
+	<input type="hidden" name="token" value="{...{.}...}"/>  
+	<input type="submit" value="upload" />  
+	</form>  
+	</body>  
+	</html>`
+
+	tpl2 = `<html>  
+	<head>  
+	<title>上传文件</title>  
+	</head>  
+	<body>  
+	<form enctype="multipart/form-data" action="/uploadx" method="post">  
+	<!--input type="file" name="file" /-->  
+	<input type="file" name="file"/>  
+	<input type="submit" value="upload" />  
+	</form>  
+	</body>  
+	</html>`
 )
-
-const tpl = `<html>  
-<head>  
-<title>上传文件</title>  
-</head>  
-<body>  
-<form enctype="multipart/form-data" action="/upload" method="post">  
- <input type="file" name="uploadfile" />  
- <input type="hidden" name="token" value="{...{.}...}"/>  
- <input type="submit" value="upload" />  
-</form>  
-</body>  
-</html>`
-
-const tpl2 = `<html>  
-<head>  
-<title>上传文件</title>  
-</head>  
-<body>  
-<form enctype="multipart/form-data" action="/uploadx" method="post">  
- <!--input type="file" name="file" /-->  
- <input type="file" name="file"/>  
- <input type="submit" value="upload" />  
-</form>  
-</body>  
-</html>`
 
 
 var staticHandler http.Handler
@@ -55,11 +53,11 @@ func init(){
 func main(){
 	fmt.Println("This is a http server for file upload and download ",CSTUpdate_dir)
 	http.HandleFunc("/", index)
-	http.HandleFunc("/uploadx",uploadEz)
+	http.HandleFunc("/uploadx",upload)
 	http.HandleFunc("/view",ViewHandler)
 	http.HandleFunc("/hello",helloHandler)
 	http.HandleFunc("/download/",downFileHandler)
-
+// 
 	
 	err :=http.ListenAndServe(":1234",nil)
 	if(err!=nil){
@@ -76,7 +74,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 } 
 
 
-func upload(t_res http.ResponseWriter,t_ask *http.Request){ 
+func uploadEz(t_res http.ResponseWriter,t_ask *http.Request){ 
 	if(t_ask.Method == "GET") {
 		t,err :=template.ParseFiles("/upload.html")
 		if(err!=nil){
@@ -175,7 +173,7 @@ func uploadEx(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 
-func uploadEz(t_res http.ResponseWriter,t_ask *http.Request){ 
+func upload(t_res http.ResponseWriter,t_ask *http.Request){ 
 	if(t_ask.Method == "POST") {
 
 		ParseAskz(t_ask)
