@@ -214,8 +214,14 @@ func uploadEx(t_res http.ResponseWriter,t_ask *http.Request){
 func upload(t_res http.ResponseWriter,t_ask *http.Request){ 
 	if(t_ask.Method == "POST") {
 
-		ParseAsk(t_ask)
-		http.Redirect(t_res,t_ask,"./View?id=",http.StatusFound)
+		var nret int
+		if bret :=ParseAsk(t_ask);bret==true{
+			nret = http.StatusFound
+		} else {
+			nret = http.StatusInternalServerError
+		}
+		
+		http.Redirect(t_res,t_ask,"./View?id=",nret)
 	}
 }
 
@@ -288,7 +294,7 @@ func ParseAskz(t_ask *http.Request){
 }
 
 
-func ParseAsk(t_ask *http.Request){	
+func ParseAsk(t_ask *http.Request)bool{	
 	muti_reader ,_err:= t_ask.MultipartReader()
 	var sft software.SxSoft
 	var bfileSave bool  = false
@@ -316,8 +322,10 @@ func ParseAsk(t_ask *http.Request){
 
 	if bfileSave {
 		logx(sft.Msgx())
-		software.InsertDB(&sft,&software.M_dbCfg)
+		return software.InsertDB(&sft,&software.M_dbCfg)
 	}
+
+	return true
 }
 
 func showPart(t_part *multipart.Part){

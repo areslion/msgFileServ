@@ -83,8 +83,6 @@ func InsertDB(sft *SxSoft,cfg *dbbase.SCfg) bool {
 
 	sqlcmd := "REPLACE INTO depotSft(namexf,namexa,ver,pathx,flagSft,md5x) "
 	sqlcmd +="VALUES(?,?,?,?,?,?)"
-	//sqlcmd := "INSERT INTO depotSft(namexf,namexa,ver,pathx,flagSft,md5x) "
-	//sqlcmd +="VALUES('?','?','?','?',?,'?')"
 	smt,err := cnt.Prepare(sqlcmd)
 	if err!=nil{
 		logx("InsertDB  fail to Prepare "+err.Error())
