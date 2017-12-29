@@ -1,7 +1,6 @@
 package main
 
 import (
-"net/url"
 "bytes"
 "fmt"
 "io"
@@ -86,20 +85,21 @@ func postFileEx(filename string, targetUrl string,path string) error {
         return err
     }
 
-    fmx := url.Values{
-        "name":{"企控通"},
-        "time":{"2017年12月27日14:00:52"},
-    }
 
-    fmName,_ :=bodyWriter.CreateFormFile("desc","descx")
-    strfmt :=fmx.Encode()
-    fmName.Write([]byte(strfmt))
-
+    // fmName,_ :=bodyWriter.CreateFormFile("desc","descx")
+    // strfmt :=fmx.Encode()
+    // fmName.Write([]byte(strfmt))    
+    // fmName,_ =bodyWriter.CreateFormFile("appname","visx")
+    // fmName.Write([]byte("visx-------------1"))
+    newForm(bodyWriter,"appname","","tst1")
+    newForm(bodyWriter,"appversion","","1.9.1")
+    newForm(bodyWriter,"appname","","tst1")
+    newForm(bodyWriter,"apptype","","7")
+    newForm(bodyWriter,"appdescription","","This is a form test 1.0.1")
+    newForm(bodyWriter,"md5","","123abc")
 
     contentType := bodyWriter.FormDataContentType()
     bodyWriter.Close()
-
-    
     resp, err := http.Post(targetUrl, contentType, bodyBuf)
     if err != nil {
         return err
@@ -112,6 +112,11 @@ func postFileEx(filename string, targetUrl string,path string) error {
     fmt.Println(resp.Status)
     fmt.Println(string(resp_body))
     return nil
+}
+
+func newForm(t_wter *multipart.Writer,t_filed,t_name,t_cxt string){
+    ioW,_ := t_wter.CreateFormFile(t_filed,t_name)
+    ioW.Write([]byte(t_cxt))
 }
 
 func postMutiForm(){

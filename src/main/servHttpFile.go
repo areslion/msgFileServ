@@ -1,3 +1,4 @@
+
 package main
 import (
 	"mime/multipart"
@@ -10,8 +11,11 @@ import (
 	"log"
 	"bytes"
 	"runtime"
-	"sync"	
+	"sync"		
+)
+import (
 	"dbbase"
+	"software"
 )
 
 
@@ -56,6 +60,7 @@ var (
 
 func init(){
 	staticHandler = http.StripPrefix("/download/", http.FileServer(http.Dir("download")))
+	software.M_dbCfg.Init("10.20.10.101","root","123456","deskSafe","utf8")
 }
 
 
@@ -64,6 +69,7 @@ func main(){
 	//tstdatabase()
 	mutiRun()
 }
+
 
 func mutiRun(){
 	runtime.GOMAXPROCS(1)
@@ -208,7 +214,7 @@ func uploadEx(t_res http.ResponseWriter,t_ask *http.Request){
 func upload(t_res http.ResponseWriter,t_ask *http.Request){ 
 	if(t_ask.Method == "POST") {
 
-		ParseAskz(t_ask)
+		ParseAsk(t_ask)
 		http.Redirect(t_res,t_ask,"./View?id=",http.StatusFound)
 	}
 }
@@ -283,10 +289,42 @@ func ParseAskz(t_ask *http.Request){
 
 
 func ParseAsk(t_ask *http.Request){	
-	err := t_ask.ParseMultipartForm(0)
-	if err ==nil {
-		log.Println("FormValue:",t_ask.FormValue("desc"))
-	}	
+	muti_reader ,_err:= t_ask.MultipartReader()
+	var sft software.SxSoft
+	var bfileSave bool  = false
+
+	if _err == nil {
+		for{
+			part,err := muti_reader.NextPart()
+			if err == io.EOF {
+				break
+			}
+			
+			if part.FormName() == "file" {
+				buf := new(bytes.Buffer)
+				buf.ReadFrom(part)
+				var pathx string
+				pathx,bfileSave = saveFileBytes(part.FileName(),buf.Bytes())
+				sft.SetNameFile(part.FileName())
+				sft.SetPath(pathx)
+			} else {
+				sft.Set(part)
+			}
+			
+		}
+	}
+
+	if bfileSave {
+		logx(sft.Msgx())
+		software.InsertDB(&sft,&software.M_dbCfg)
+	}
+}
+
+func showPart(t_part *multipart.Part){
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(t_part)
+	log.Println("\r\n\r\nForma name=",t_part.FormName(),
+	"\r\n","File name=",t_part.FileName(),"\r\n","size=",buf.Len(),"\r\n","content=",buf.String())
 }
 
 func ViewHandler(t_res http.ResponseWriter,t_ask *http.Request){
@@ -388,21 +426,25 @@ func saveFile(filename string,file *multipart.File) bool{
 	return true
 }
 
-func saveFileBytes(filename string,buf [] byte) bool{
+func saveFileBytes(filename string,buf [] byte) (r_path string, b_ret bool){
 	fileServer := CSTUpdate_dir+CSTPathSep+filename
 	t,err :=os.Create(fileServer)
 	if(err!=nil){
 		log.Fatal("saveFile 创建服务端文件失败",err.Error())
-		return false
+		return "", false
 	}
 	defer t.Close()
 
 	log.Println("成功创本地文件 ",fileServer)		
 	if _,err := t.Write(buf);err!=nil{
 		log.Fatal("saveFile 存储文件失败 ",err.Error())		
-		return false
+		return "" ,false
 	}
 
 	log.Println("成功保存文件:",fileServer)
-	return true
+	return fileServer,true
+}
+
+func logx(t_msg string){
+	log.Println("serHttpFile  "+t_msg)
 }

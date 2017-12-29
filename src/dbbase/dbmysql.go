@@ -14,7 +14,7 @@ type SCfg struct{
 	dbname string
 	charset string
 }
-func (p* SCfg)init(t_ip,t_usr,t_pwd,t_db,t_cset string){
+func (p* SCfg)Init(t_ip,t_usr,t_pwd,t_db,t_cset string){
 	p.hostIP = t_ip
 	p.usrname = t_usr
 	p.password = t_pwd
