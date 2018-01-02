@@ -12,10 +12,12 @@ import (
 	"bytes"
 	"runtime"
 	"sync"		
+	//"github.com/satori/go.uuid"
 )
 import (
 	"dbbase"
 	"software"
+	"util"
 )
 
 
@@ -285,7 +287,7 @@ func ParseAskz(t_ask *http.Request){
 				// buf := new(bytes.Buffer)
 				// buf.ReadFrom(part)
 				// log.Println("Content=",buf.String())
-				saveFileBytes(part.FileName(),buf.Bytes())
+				//saveFileBytes(part.FileName(),buf.Bytes())
 			}
 			
 		}
@@ -298,6 +300,7 @@ func ParseAsk(t_ask *http.Request)bool{
 	muti_reader ,_err:= t_ask.MultipartReader()
 	var sft software.SxSoft
 	var bfileSave bool  = false
+	buf := new(bytes.Buffer)
 
 	if _err == nil {
 		for{
@@ -307,12 +310,8 @@ func ParseAsk(t_ask *http.Request)bool{
 			}
 			
 			if part.FormName() == "file" {
-				buf := new(bytes.Buffer)
 				buf.ReadFrom(part)
-				var pathx string
-				pathx,bfileSave = saveFileBytes(part.FileName(),buf.Bytes())
 				sft.SetNameFile(part.FileName())
-				sft.SetPath(pathx)
 			} else {
 				sft.Set(part)
 			}
@@ -320,12 +319,15 @@ func ParseAsk(t_ask *http.Request)bool{
 		}
 	}
 
-	if bfileSave {
+	if buf.Len()>0 {
 		logx(sft.Msgx())
-		return software.InsertDB(&sft,&software.M_dbCfg)
+		sft.FolderID ,bfileSave= software.InsertDB(&sft,&software.M_dbCfg)
+		if bfileSave {
+			_,bfileSave = saveFileBytes(&sft,buf.Bytes())
+		}
 	}
 
-	return true
+	return bfileSave
 }
 
 func showPart(t_part *multipart.Part){
@@ -434,23 +436,12 @@ func saveFile(filename string,file *multipart.File) bool{
 	return true
 }
 
-func saveFileBytes(filename string,buf [] byte) (r_path string, b_ret bool){
-	fileServer := CSTUpdate_dir+CSTPathSep+filename
-	t,err :=os.Create(fileServer)
-	if(err!=nil){
-		log.Fatal("saveFile 创建服务端文件失败",err.Error())
-		return "", false
-	}
-	defer t.Close()
+func saveFileBytes(t_f *software.SxSoft,buf [] byte) (r_path string, b_ret bool){
+	folder := CSTUpdate_dir+CSTPathSep + t_f.FolderID + CSTPathSep
+	fileServer :=  folder + t_f.Namexf
 
-	log.Println("成功创本地文件 ",fileServer)		
-	if _,err := t.Write(buf);err!=nil{
-		log.Fatal("saveFile 存储文件失败 ",err.Error())		
-		return "" ,false
-	}
-
-	log.Println("成功保存文件:",fileServer)
-	return fileServer,true
+	os.MkdirAll(folder, 0711)
+	return util.SaveFileBytes(fileServer,buf)
 }
 
 func logx(t_msg string){

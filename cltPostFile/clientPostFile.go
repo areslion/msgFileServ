@@ -130,8 +130,8 @@ func postMutiForm(){
 // sample usage
 func main() {
     //tstHello()
-    //getFile("a.txt")
-    tstPostFile()
+    getFile("a.txt","/4a842d6f-8982-4a15-870c-b7f2d41d89bf/a.txt")
+    //tstPostFile()
 }
 
 func tstPostFile(){
@@ -162,9 +162,9 @@ func tstHello(){
     log.Println(string(body))
 }
 
-func getFile(t_file string){
+func getFile(local,t_file string){
 
-    f, err := os.OpenFile(t_file, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+    f, err := os.OpenFile(local, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
     stat, err := f.Stat() //获取文件状态
     if err != nil { panic(err) } //把文件指针指到文件末，当然你说为何不直接用 O_APPEND 模式打开，没错是可以。我这里只是试验。
 
