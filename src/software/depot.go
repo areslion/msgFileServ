@@ -6,6 +6,7 @@ import (
 	"log"
 	"mime/multipart"
 	"strconv"
+	"container/list"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -176,6 +177,39 @@ func GetSft(t_name string) (r_sft *SxSoft, r_folderid string, b_ret bool) {
 	}
 
 	return sft, folderid, true
+}
+
+func GetSftLst() (r_lst *list.List, b_ret bool) {
+	sqlcmd := "SELECT namexf,namexa,ver,pathx,pathIcon,flagSft,md5x,folderId,descx FROM depotSft "
+
+	cnt, bret := dbbase.Open(&M_dbCfg)
+	if bret == false {
+		return nil, false
+	}
+	defer dbbase.Close()
+	defer cnt.Close()
+
+	smt, err := cnt.Prepare(sqlcmd)
+	if err != nil {
+		logx("GetSftLst  fail to Prepare " + err.Error())
+		return nil, false
+	}
+
+	rows, err := smt.Query()
+	if err != nil {
+		logx("GetSft  " + err.Error())
+		return nil,false
+	}
+
+	lstSft := list.New()
+	if rows.Next() {
+		var sft SxSoft
+		rows.Scan(&sft.Namexf, &sft.Namexa, &sft.Ver, &sft.Pathx, 
+			&sft.PathIcon, &sft.FlgSft, &sft.Md5x, &sft.FolderID,&sft.Desc)
+		lstSft.PushBack(sft)
+	}
+
+	return lstSft, true
 }
 
 func strx(t_ii string) string {

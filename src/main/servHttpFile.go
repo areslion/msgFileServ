@@ -11,8 +11,7 @@ import (
 	"log"
 	"bytes"
 	"runtime"
-	"sync"		
-	//"github.com/satori/go.uuid"
+	"sync"
 )
 import (
 	"dbbase"
@@ -85,6 +84,14 @@ func mutiRun(){
 
 func tstdatabase(){
 	dbbase.Tstmysql()
+	lstSft,_ := software.GetSftLst()
+	for ix:=lstSft.Front();ix!=nil;ix=ix.Next() {
+		//log.Println(ix.Value)
+		sft := ix.Value.(software.SxSoft)
+		log.Println(sft.Msgx())
+		// var sft interface{}
+		// if sft.(type) == software.SxSoft
+	}
 	wg.Done()
 }
 
@@ -95,7 +102,7 @@ func inithttp(){
 	http.HandleFunc("/view",ViewHandler)
 	http.HandleFunc("/hello",helloHandler)
 	http.HandleFunc("/download/",downFileHandler)
-// 
+
 	
 	err :=http.ListenAndServe(":1234",nil)
 	if(err!=nil){
@@ -214,7 +221,7 @@ func uploadEx(t_res http.ResponseWriter,t_ask *http.Request){
 
 
 func upload(t_res http.ResponseWriter,t_ask *http.Request){ 
-	if(t_ask.Method == "POST") {
+	if t_ask.Method == "POST" {
 
 		var nret int
 		if bret :=ParseAsk(t_ask);bret==true{
