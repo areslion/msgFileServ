@@ -31,7 +31,7 @@ const (
 	CstDownload = "http://localhost:1234/download/"
 
 	CSTPathSep = "\\"
-	CSTUpdate_dir = "E:"+CSTPathSep+"workspace"+CSTPathSep+"005.XNKJ"+CSTPathSep+"002.Project"+CSTPathSep+"004.GoWSP"+CSTPathSep+"servHttpFile"+CSTPathSep+"test"
+	CSTUpdate_dir = "E:"+CSTPathSep+"workspace"+CSTPathSep+"005.XNKJ"+CSTPathSep+"tstFilServ"
 )
 
 type SxSoft struct {
