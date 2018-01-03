@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 "bytes"
 "fmt"
 "io"
@@ -129,9 +130,23 @@ func postMutiForm(){
 
 // sample usage
 func main() {
-    //tstHello()
-    getFile("a.txt","/4a842d6f-8982-4a15-870c-b7f2d41d89bf/a.txt")
-    //tstPostFile()
+    nsel := flag.Int("sel",0,"choice functon")
+
+    flag.Parse()
+    log.Println("choice sel=",*nsel)
+    switch *nsel {
+    case 0:
+        tstPostFile()
+    case 1:
+        delSft()
+    case 2:
+        getlstAPP()
+    case 3:
+        getFile("a.txt","/4a842d6f-8982-4a15-870c-b7f2d41d89bf/a.txt")
+    default:
+        panic("undefine parameter")
+    }
+    
 }
 
 func tstPostFile(){
@@ -175,4 +190,24 @@ func getFile(local,t_file string){
     written, err := io.Copy(f, resp.Body)
     if err != nil { panic(err) }
     println("written: ", written)
+}
+
+func getlstAPP(){
+    response,_ := http.Get(CstAddr+"getlstapp/")
+    defer response.Body.Close()
+    body,_ := ioutil.ReadAll(response.Body)
+    fmt.Println(string(body))
+}
+
+func delSft(){
+    tmp := `{"appName":"tst1","appMd5":"123abc"}`
+    req := bytes.NewBuffer([]byte(tmp))
+
+    body_type := "application/json;charset=utf-8"    
+    resp, _ := http.Post(CstAddr+"delsoft/", body_type, req)
+    //http.NewRequest("POST", CstDownload+"delsoft/", req_new)
+    body, _ := ioutil.ReadAll(resp.Body)
+    fmt.Println(string(body))
+
+    resp.Body.Close()
 }

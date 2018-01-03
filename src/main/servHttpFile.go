@@ -15,6 +15,7 @@ import (
 )
 import (
 	"dbbase"
+	"httpserv"
 	"software"
 	"util"
 )
@@ -22,9 +23,7 @@ import (
 
 
 const (
-	//CSTUpdate_dir = "/wsp/gotst/upload"
-	CSTPathSep = "\\"
-	CSTUpdate_dir = "E:"+CSTPathSep+"workspace"+CSTPathSep+"005.XNKJ"+CSTPathSep+"002.Project"+CSTPathSep+"004.GoWSP"+CSTPathSep+"servHttpFile"+CSTPathSep+"test"
+	//CSTUpdate_dir = "/wsp/gotst/upload"	
 	tpl = `<html>  
 	<head>  
 	<title>上传文件</title>  
@@ -84,24 +83,23 @@ func mutiRun(){
 
 func tstdatabase(){
 	dbbase.Tstmysql()
-	lstSft,_ := software.GetSftLst()
+	lstSft,strJson ,_:= software.GetSftLst()
 	for ix:=lstSft.Front();ix!=nil;ix=ix.Next() {
-		//log.Println(ix.Value)
 		sft := ix.Value.(software.SxSoft)
 		log.Println(sft.Msgx())
-		// var sft interface{}
-		// if sft.(type) == software.SxSoft
 	}
+	log.Println(strJson)
 	wg.Done()
 }
 
 func inithttp(){
-	fmt.Println("This is a http server for file upload and download ",CSTUpdate_dir)
 	http.HandleFunc("/", index)
 	http.HandleFunc("/uploadx",upload)
 	http.HandleFunc("/view",ViewHandler)
 	http.HandleFunc("/hello",helloHandler)
 	http.HandleFunc("/download/",downFileHandler)
+	http.HandleFunc("/getlstapp/",httpserv.GetlstApp)
+	http.HandleFunc("/delsoft/",httpserv.DelApp)
 
 	
 	err :=http.ListenAndServe(":1234",nil)
@@ -153,7 +151,7 @@ func uploadEz(t_res http.ResponseWriter,t_ask *http.Request){
 
 		log.Println("接到上传文件请求 name=",h.Filename,"size=",h.Size)
 		//open files
-		fileServer := CSTUpdate_dir+CSTPathSep+filename
+		fileServer := software.CSTUpdate_dir+software.CSTPathSep+filename
 		t,err :=os.Create(fileServer)
 		if(err!=nil){
 			http.Error(t_res,err.Error(),http.StatusInternalServerError)
@@ -346,7 +344,7 @@ func showPart(t_part *multipart.Part){
 
 func ViewHandler(t_res http.ResponseWriter,t_ask *http.Request){
 	imageid := t_ask.FormValue("id")
-	imagepath := CSTUpdate_dir+"/"+imageid
+	imagepath := software.CSTUpdate_dir+"/"+imageid
 	if bExist := isExists(imagepath);!bExist{
 		http.NotFound(t_res,t_ask)
 		return
@@ -387,7 +385,7 @@ func helloHandler(t_res http.ResponseWriter,t_ask *http.Request){
 
 	if(t_ask.Method == "GET") {
 		log.Println("hello------",2)
-		t,err :=template.ParseFiles("."+CSTPathSep+"html"+CSTPathSep+"hello.html")
+		t,err :=template.ParseFiles("."+software.CSTPathSep+"html"+software.CSTPathSep+"hello.html")
 		if(err!=nil){
 			http.Error(t_res,err.Error(),http.StatusInternalServerError)
 			log.Println(err.Error(),http.StatusInternalServerError)
@@ -425,7 +423,7 @@ func downFileHandler(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 func saveFile(filename string,file *multipart.File) bool{
-	fileServer := CSTUpdate_dir+CSTPathSep+filename
+	fileServer := software.CSTUpdate_dir+software.CSTPathSep+filename
 	t,err :=os.Create(fileServer)
 	if(err!=nil){
 		log.Fatal("saveFile 创建服务端文件失败",err.Error())
@@ -444,7 +442,7 @@ func saveFile(filename string,file *multipart.File) bool{
 }
 
 func saveFileBytes(t_f *software.SxSoft,buf [] byte) (r_path string, b_ret bool){
-	folder := CSTUpdate_dir+CSTPathSep + t_f.FolderID + CSTPathSep
+	folder := t_f.GetFolderPath()
 	fileServer :=  folder + t_f.Namexf
 
 	os.MkdirAll(folder, 0711)

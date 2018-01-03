@@ -30,11 +30,6 @@ func SaveFileBytes(filename string,buf [] byte) (r_path string, b_ret bool){
 
 func Guid()(r_guid string){
 	u1 := uuid.NewV4()
-	
-	// log.Println("-------------x-",u1,"-x----------")
-	// fmt.Printf("-----y-%s-y-------",u1)	
-
-	//strRet := string(u1[0:len(u1)])
 	strRet := fmt.Sprintf("%s",u1)
 	return strRet
 }
