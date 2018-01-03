@@ -94,13 +94,12 @@ func tstdatabase(){
 
 func inithttp(){
 	http.HandleFunc("/", index)
-	http.HandleFunc("/uploadx",upload)
 	http.HandleFunc("/view",ViewHandler)
 	http.HandleFunc("/hello",helloHandler)
-	http.HandleFunc("/download/",downFileHandler)
-	http.HandleFunc("/getlstapp/",httpserv.GetlstApp)
-	http.HandleFunc("/delsoft/",httpserv.DelApp)
-
+	http.HandleFunc("/uploadx",upload)//POST upload software
+	http.HandleFunc("/download/",downFileHandler)//GET download file
+	http.HandleFunc("/getlstapp/",httpserv.GetlstApp)//GET app list
+	http.HandleFunc("/delsoft/",httpserv.DelApp)//POST delete software
 	
 	err :=http.ListenAndServe(":1234",nil)
 	if(err!=nil){
