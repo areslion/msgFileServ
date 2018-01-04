@@ -26,9 +26,9 @@ func DelApp(t_res http.ResponseWriter,t_ask *http.Request){
 				log.Println(sftDel.Mx()+" will be removed")
 				sft ,_,bret:= software.GetSft(sftDel.NamexA)
 				if bret {
-					err = os.RemoveAll(sft.GetFolderPath())
+					err = os.RemoveAll(sft.GetFolderPath(true))
 					if err ==nil {
-						log.Println("remove folder ",sft.GetFolderPath())
+						log.Println("remove folder ",sft.GetFolderPath(true))
 						bDel = software.DelSft(sft)
 						if bDel {
 							logx(sftDel.Mx()+" removed successfully")
@@ -37,7 +37,7 @@ func DelApp(t_res http.ResponseWriter,t_ask *http.Request){
 						}
 
 					} else {
-						log.Println("Fail to remove folder ",sft.GetFolderPath()+" "+err.Error())
+						log.Println("Fail to remove folder ",sft.GetFolderPath(true)+" "+err.Error())
 					}
 				} else {
 					log.Println(sftDel.Mx()+" is not exist in server")

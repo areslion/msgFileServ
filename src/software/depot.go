@@ -88,8 +88,11 @@ func (p *SxSoft) SetNameFile(t_name string) {
 func (p *SxSoft) SetPath(t_x string) {
 	p.Pathx = t_x
 }
-func (p *SxSoft) GetFolderPath()(r_folderPath string){//获取文件仓库文件夹的路径
-	folder := CSTUpdate_dir+CSTPathSep + p.FolderID + CSTPathSep
+func (p *SxSoft) GetFolderPath(t_endsep bool)(r_folderPath string){//获取文件仓库文件夹的路径
+	folder := CSTUpdate_dir+CSTPathSep + p.FolderID
+	if t_endsep == true {
+		folder += CSTPathSep
+	}
 
 	return folder
 }
@@ -239,6 +242,7 @@ func GetSftLst() (r_lst *list.List,r_json string, b_ret bool) {
 
 	cnt, bret := dbbase.Open(&M_dbCfg)
 	if bret == false {
+		logx("GetSftLst  fail to open db "+ M_dbCfg.GetCntStr())
 		return nil,"", false
 	}
 	defer dbbase.Close()
@@ -252,7 +256,7 @@ func GetSftLst() (r_lst *list.List,r_json string, b_ret bool) {
 
 	rows, err := smt.Query()
 	if err != nil {
-		logx("GetSft  " + err.Error())
+		logx("GetSft fail to Query " + err.Error())
 		return nil, "",false
 	}
 
@@ -267,15 +271,13 @@ func GetSftLst() (r_lst *list.List,r_json string, b_ret bool) {
 
 		jxe.NamexF = sft.Namexf;jxe.NamexA = sft.Namexf;jxe.Ver=sft.Ver
 		jxe.UlrF = sft.Pathx; jxe.UlrIcon = sft.PathIcon; jxe.Typex = fmt.Sprint(sft.FlgSft); jxe.Descx = sft.Desc
-		//jx, _ := json.Marshal(jxe)
-
 		lstar = append(lstar,jxe)
-		//logx(string(jx))
 	}
 
 	jx, _ := json.Marshal(lstar)
 	strRetJson := "{\"repoAppList\":"+string(jx)+"}"
 
+	logx("GetSft num=" + fmt.Sprintf("%v",len(lstar)))
 	return lstSft, strRetJson,true
 }
 

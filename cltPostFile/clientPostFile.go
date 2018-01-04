@@ -14,8 +14,8 @@ import (
 )
 
 const (
-    CstAddr = "http://localhost:1234/"
-    CstDownload = "http://localhost:1234/download/"
+    CstAddr = "http://10.20.11.17:1234/"
+    CstDownload = "http://10.20.11.17:1234/download/"
 )
 
 func postFile(filename string, targetUrl string,path string) error {
@@ -142,7 +142,7 @@ func main() {
     case 2:
         getlstAPP()
     case 3:
-        getFile("a.txt","/4a842d6f-8982-4a15-870c-b7f2d41d89bf/a.txt")
+        getFile("go1.9.2.windows-amd64.msi","7d68d66c-e201-4aea-9a2f-7a677e984ed9/go1.9.2.windows-amd64.msi")
     default:
         panic("undefine parameter")
     }
