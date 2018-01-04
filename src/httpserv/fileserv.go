@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 import (
+	"fmt"
 	"os"
 	"software"
 )
@@ -18,8 +19,10 @@ func DelApp(t_res http.ResponseWriter,t_ask *http.Request){
 	var bDel = false
 	var nret int
 	log.Println("DelApp called")
+	log.Println(t_ask)
 	if t_ask.Method == "POST" {
 		bts,err := ioutil.ReadAll(t_ask.Body)
+		if err == nil {
 			var sftDel  software.SxSftDel
 			err = json.Unmarshal(bts,&sftDel)
 			if err ==nil {
@@ -59,8 +62,14 @@ func DelApp(t_res http.ResponseWriter,t_ask *http.Request){
 				nret = http.StatusInternalServerError
 			}
 			
-			http.Redirect(t_res,t_ask,"./View?id=",nret)
+			logx("DelApp res="+fmt.Sprintf("%d",nret))
+			//http.Redirect(t_res,t_ask,"./View?id=",nret)
+		} else {
+			logx("fail to read body data  "+err.Error())
 		}
+	} else {
+		logx("DelApp  undefined method="+t_ask.Method)
+	}
 }
 
 func DownFileHandler(t_res http.ResponseWriter,t_ask *http.Request){ 

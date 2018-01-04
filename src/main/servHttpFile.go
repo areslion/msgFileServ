@@ -92,8 +92,8 @@ func inithttp() {
 	http.HandleFunc("/hello", helloHandler)
 	http.HandleFunc("/uploadx", upload)                //POST upload software
 	http.HandleFunc("/download/", downFileHandlerEx)     //GET download file
-	http.HandleFunc("/getlstapp/", httpserv.GetlstApp) //GET app list
-	http.HandleFunc("/delsoft/", httpserv.DelApp)      //POST delete software
+	http.HandleFunc("/getlstapp", httpserv.GetlstApp) //GET app list
+	http.HandleFunc("/delsoft", httpserv.DelApp)      //POST delete software
 
 	err := http.ListenAndServe(":1234", nil)
 	if err != nil {
@@ -164,8 +164,7 @@ func uploadEz(t_res http.ResponseWriter, t_ask *http.Request) {
 		}
 
 		log.Println("文件 ", fileServer, " 上传成功，将跳转到文件浏览页面")
-		http.Redirect(t_res, t_ask, "./View?id="+filename, http.StatusFound)
-		//http.Redirect(t_res,t_ask,nil,http.StatusFound)
+		//http.Redirect(t_res, t_ask, "./View?id="+filename, http.StatusFound)
 	}
 }
 
@@ -179,7 +178,8 @@ func upload(t_res http.ResponseWriter, t_ask *http.Request) {
 			nret = http.StatusInternalServerError
 		}
 
-		http.Redirect(t_res, t_ask, "./View?id=", nret)
+		logx("upload res="+fmt.Sprintf("%d",nret))
+		//http.Redirect(t_res, t_ask, "./View?id=", nret)
 	}
 }
 

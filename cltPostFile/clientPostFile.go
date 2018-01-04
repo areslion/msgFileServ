@@ -193,7 +193,7 @@ func getFile(local,t_file string){
 }
 
 func getlstAPP(){
-    response,_ := http.Get(CstAddr+"getlstapp/")
+    response,_ := http.Get(CstAddr+"getlstapp")
     defer response.Body.Close()
     body,_ := ioutil.ReadAll(response.Body)
     fmt.Println(string(body))
@@ -204,7 +204,7 @@ func delSft(){
     req := bytes.NewBuffer([]byte(tmp))
 
     body_type := "application/json;charset=utf-8"    
-    resp, _ := http.Post(CstAddr+"delsoft/", body_type, req)
+    resp, _ := http.Post(CstAddr+"delsoft", body_type, req)
     //http.NewRequest("POST", CstDownload+"delsoft/", req_new)
     body, _ := ioutil.ReadAll(resp.Body)
     fmt.Println(string(body))
