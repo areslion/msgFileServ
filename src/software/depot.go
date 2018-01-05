@@ -27,8 +27,8 @@ const (
 	cst_6des  string = "appdescription"
 	cst_7md5  string = "md5"
 
-	CstAddr     = "http://localhost:1234/"
-	CstDownload = "http://localhost:1234/download/"
+	CstAddr     = "http://10.20.11.17:1234/"
+	CstDownload = "http://10.20.11.17:1234/download/"
 
 	CSTPathSep = "\\"
 	CSTUpdate_dir = "E:"+CSTPathSep+"workspace"+CSTPathSep+"005.XNKJ"+CSTPathSep+"tstFilServ"
@@ -269,7 +269,7 @@ func GetSftLst() (r_lst *list.List,r_json string, b_ret bool) {
 			&sft.PathIcon, &sft.FlgSft, &sft.Md5x, &sft.FolderID, &sft.Desc)
 		lstSft.PushBack(sft)
 
-		jxe.NamexF = sft.Namexf;jxe.NamexA = sft.Namexf;jxe.Ver=sft.Ver
+		jxe.NamexF = sft.Namexf;jxe.NamexA = sft.Namexa;jxe.Ver=sft.Ver
 		jxe.UlrF = sft.Pathx; jxe.UlrIcon = sft.PathIcon; jxe.Typex = fmt.Sprint(sft.FlgSft); jxe.Descx = sft.Desc
 		lstar = append(lstar,jxe)
 	}
