@@ -14,7 +14,10 @@ import (
 )
 
 const (
-    CstAddr = "http://10.20.10.101:1234/"
+    // CstAddr = "http://10.20.10.101:1234/"
+    // CstDownload = CstAddr+"download/"
+
+    CstAddr = "http://10.20.11.17:1234/"
     CstDownload = CstAddr+"download/"
 )
 

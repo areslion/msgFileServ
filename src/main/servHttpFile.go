@@ -122,7 +122,7 @@ func showPart(t_part *multipart.Part) {
 
 func ViewHandler(t_res http.ResponseWriter, t_ask *http.Request) {
 	imageid := t_ask.FormValue("id")
-	imagepath := software.CfgSft.Path + "/" + imageid
+	imagepath := software.CfgSft.ServFile.Path + "/" + imageid
 	if bExist := util.IsExists(imagepath); !bExist {
 		http.NotFound(t_res, t_ask)
 		return
@@ -139,7 +139,7 @@ func helloHandler(t_res http.ResponseWriter, t_ask *http.Request) {
 
 	if t_ask.Method == "GET" {
 		log.Println("hello------", 2)
-		t, err := template.ParseFiles("." + software.CfgSft.Path + "html" + software.CfgSft.Sep + "hello.html")
+		t, err := template.ParseFiles("." + software.CfgSft.ServFile.Path + "html" + software.CfgSft.ServFile.Sep + "hello.html")
 		if err != nil {
 			http.Error(t_res, err.Error(), http.StatusInternalServerError)
 			log.Println(err.Error(), http.StatusInternalServerError)

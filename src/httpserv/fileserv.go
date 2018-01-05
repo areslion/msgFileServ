@@ -29,9 +29,9 @@ func delApp(t_res http.ResponseWriter, t_ask *http.Request) {
 				log.Println(sftDel.Mx() + " will be removed")
 				sft, _, bret := software.GetSft(sftDel.NamexA)
 				if bret {
-					err = os.RemoveAll(sft.GetFolderPath(&software.CfgSft,true))
+					err = os.RemoveAll(sft.GetFolderPath(software.CfgSft,true))
 					if err == nil {
-						log.Println("remove folder ", sft.GetFolderPath(&software.CfgSft,true))
+						log.Println("remove folder ", sft.GetFolderPath(software.CfgSft,true))
 						bDel = software.DelSft(sft)
 						if bDel {
 							logx(sftDel.Mx() + " removed successfully")
@@ -40,7 +40,7 @@ func delApp(t_res http.ResponseWriter, t_ask *http.Request) {
 						}
 
 					} else {
-						log.Println("Fail to remove folder ", sft.GetFolderPath(&software.CfgSft,true)+" "+err.Error())
+						log.Println("Fail to remove folder ", sft.GetFolderPath(software.CfgSft,true)+" "+err.Error())
 					}
 				} else {
 					log.Println(sftDel.Mx() + " is not exist in server")
@@ -79,8 +79,8 @@ func downFileHandler(t_res http.ResponseWriter, t_ask *http.Request) {
 	folder, fldID, _ := util.GetPathEle(t_ask.URL.Path)
 	prefix := "/" + folder + "/"
 	sft.FolderID = fldID
-	logx("start fileservr(" + prefix + " " + sft.GetFolderPath(&software.CfgSft,false) + ")")
-	staticFServ := http.StripPrefix(prefix, http.FileServer(http.Dir(sft.GetFolderPath(&software.CfgSft,false))))
+	logx("start fileservr(" + prefix + " " + sft.GetFolderPath(software.CfgSft,false) + ")")
+	staticFServ := http.StripPrefix(prefix, http.FileServer(http.Dir(sft.GetFolderPath(software.CfgSft,false))))
 	staticFServ.ServeHTTP(t_res, t_ask)
 }
 
@@ -121,9 +121,9 @@ func parseAsk(t_ask *http.Request) bool {
 		}
 	}
 
+	logx("Upload sft " + sft.Msgx())
+	sft.FolderID, bfileSave = software.InsertDB(&sft, &software.M_dbCfg)
 	if buf.Len() > 0 {
-		logx("Upload sft " + sft.Msgx())
-		sft.FolderID, bfileSave = software.InsertDB(&sft, &software.M_dbCfg)
 		if bfileSave {
 			_, bfileSave = saveFileBytes(&sft, buf.Bytes())
 			if bfileSave {
@@ -141,7 +141,7 @@ func parseAsk(t_ask *http.Request) bool {
 }
 
 func saveFileBytes(t_f *software.SxSoft, buf []byte) (r_path string, b_ret bool) {
-	folder := t_f.GetFolderPath(&software.CfgSft,true)
+	folder := t_f.GetFolderPath(software.CfgSft,true)
 	fileServer := folder + t_f.Namexf
 
 	os.MkdirAll(folder, 0711)
@@ -155,7 +155,7 @@ func StarFileServ() {
 	http.HandleFunc("/delsoft", delApp)            //POST delete software
 
 	//err := http.ListenAndServe(":1234", nil)
-	err := http.ListenAndServe(":"+software.CfgSft.Port, nil)
+	err := http.ListenAndServe(":"+software.CfgSft.ServFile.Port, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe", err.Error())
 		fmt.Println("ListenAndServe 启动服务器失败 ", err.Error())

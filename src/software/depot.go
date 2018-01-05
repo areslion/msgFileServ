@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"strconv"
@@ -27,27 +26,10 @@ const (
 	cst_5type string = "apptype"
 	cst_6des  string = "appdescription"
 	cst_7md5  string = "md5"
-
-	//cst_cfgPath = ".\\tsms_run.json"
-	cst_cfgPath = "/wsp/tsms/cfg/tsms_run.json"
 )
 
-var CfgSft SxCfg
+var CfgSft *util.SxCfgAll = util.GetSftCfg()
 
-type SxCfg struct {
-	Ip   string `json:"ip"`
-	Port string `json:"port"`
-	Sep  string `json:"sep"`
-	Path string `json:"path"`
-}
-type SxCfgAll struct {
-	Cfg SxCfg `json:"depotSft"`
-}
-
-func (p *SxCfg) GetDownloadUlrPre() (r_pre string) {
-	r_pre = "http://" + p.Ip + ":" + p.Port + "/"
-	return
-}
 
 type SxSoft struct {
 	Namexf   string //file name
@@ -61,8 +43,8 @@ type SxSoft struct {
 	FolderID string //folder id
 }
 
-func (p *SxSoft) SetUlrF(t_cfg *SxCfg, t_f string) string {
-	p.Pathx = t_cfg.GetDownloadUlrPre() + p.FolderID + util.Cst_sept + t_f
+func (p *SxSoft) SetUlrF(t_cfg *util.SxCfgAll, t_f string) string {
+	p.Pathx = t_cfg.ServFile.GetDownloadUlrPre() + p.FolderID + util.Cst_sept + t_f
 	return p.Pathx
 }
 func (p *SxSoft) Msgx() string {
@@ -104,10 +86,10 @@ func (p *SxSoft) SetNameFile(t_name string) {
 func (p *SxSoft) SetPath(t_x string) {
 	p.Pathx = t_x
 }
-func (p *SxSoft) GetFolderPath(t_cfg *SxCfg, t_endsep bool) (r_folderPath string) { //获取文件仓库文件夹的路径
-	folder := t_cfg.Path + t_cfg.Sep + p.FolderID
+func (p *SxSoft) GetFolderPath(t_cfg *util.SxCfgAll, t_endsep bool) (r_folderPath string) { //获取文件仓库文件夹的路径
+	folder := t_cfg.ServFile.Path + t_cfg.ServFile.Sep + p.FolderID
 	if t_endsep == true {
-		folder += t_cfg.Sep
+		folder += t_cfg.ServFile.Sep
 	}
 
 	return folder
@@ -140,7 +122,7 @@ var (
 )
 
 func init() {
-	getRunCfg()
+
 }
 
 func InsertDB(sft *SxSoft, cfg *dbbase.SCfg) (r_folderId string, b_ret bool) {
@@ -152,7 +134,7 @@ func InsertDB(sft *SxSoft, cfg *dbbase.SCfg) (r_folderId string, b_ret bool) {
 	defer cnt.Close()
 
 	sft.FolderID = getFolderID(cnt, sft.Namexf)
-	sft.SetUlrF(&CfgSft, sft.Namexf)
+	sft.SetUlrF(CfgSft, sft.Namexf)
 	sqlcmd := "REPLACE INTO depotSft(namexf,namexa,ver,pathx,pathIcon,flagSft,md5x,folderId,descx) "
 	sqlcmd += "VALUES(?,?,?,?,?,?,?,?,?)"
 	smt, err := cnt.Prepare(sqlcmd)
@@ -305,24 +287,6 @@ func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
 
 	logx("GetSft num=" + fmt.Sprintf("%v", len(lstar)))
 	return lstSft, strRetJson, true
-}
-
-func getRunCfg() {
-	bts, err := ioutil.ReadFile(cst_cfgPath)
-	if err != nil {
-		log.Println("Fail to ReadFile " + cst_cfgPath + " " + err.Error())
-		return
-	}
-
-	var cfx SxCfgAll
-	err = json.Unmarshal(bts, &cfx)
-	if err != nil {
-		log.Println("Fail to Unmarshal " + cst_cfgPath + " " + err.Error())
-		return
-	}
-
-	CfgSft = cfx.Cfg
-	log.Println("depot run cfg ", CfgSft)
 }
 
 func strx(t_ii string) string {
