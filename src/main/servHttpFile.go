@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -56,6 +55,31 @@ func init() {
 	software.M_dbCfg.Init("10.20.10.101", "root", "123456", "deskSafe", "utf8")
 }
 
+func inithttp() {
+	// http.HandleFunc("/", index)
+	// http.HandleFunc("/view", ViewHandler)
+	// http.HandleFunc("/hello", helloHandler)
+//	http.HandleFunc("www.a.com/hello", helloHandler)
+
+	// http.HandleFunc("/uploadx", httpserv.Upload)            //POST upload software
+	// http.HandleFunc("/download/", httpserv.DownFileHandler) //GET download file
+	// http.HandleFunc("/getlstapp", httpserv.GetlstApp)       //GET app list
+	// http.HandleFunc("/delsoft", httpserv.DelApp)            //POST delete software
+
+	// err := http.ListenAndServe(":1234", nil)
+	// if err != nil {
+	// 	log.Fatal("ListenAndServe", err.Error())
+	// 	fmt.Println("ListenAndServe 启动服务器失败 ", err.Error())
+	// } else {
+	// 	log.Fatal("ListenAndServe 重启动服务器")
+	// 	fmt.Println("ListenAndServe 重启动服务器")
+	// }
+
+	httpserv.StarFileServ()
+
+	wg.Done()
+}
+
 func main() {
 	//inithttp()
 	//tstdatabase()
@@ -83,26 +107,7 @@ func tstdatabase() {
 	wg.Done()
 }
 
-func inithttp() {
-	http.HandleFunc("/", index)
-	http.HandleFunc("/view", ViewHandler)
-	http.HandleFunc("/hello", helloHandler)
-	http.HandleFunc("/uploadx", httpserv.Upload)            //POST upload software
-	http.HandleFunc("/download/", httpserv.DownFileHandler) //GET download file
-	http.HandleFunc("/getlstapp", httpserv.GetlstApp)       //GET app list
-	http.HandleFunc("/delsoft", httpserv.DelApp)            //POST delete software
 
-	err := http.ListenAndServe(":1234", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe", err.Error())
-		fmt.Println("ListenAndServe 启动服务器失败 ", err.Error())
-	} else {
-		log.Fatal("ListenAndServe 重启动服务器")
-		fmt.Println("ListenAndServe 重启动服务器")
-	}
-
-	wg.Done()
-}
 
 func index(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(tpl2))
@@ -117,7 +122,7 @@ func showPart(t_part *multipart.Part) {
 
 func ViewHandler(t_res http.ResponseWriter, t_ask *http.Request) {
 	imageid := t_ask.FormValue("id")
-	imagepath := software.CSTUpdate_dir + "/" + imageid
+	imagepath := software.CfgSft.Path + "/" + imageid
 	if bExist := util.IsExists(imagepath); !bExist {
 		http.NotFound(t_res, t_ask)
 		return
@@ -134,7 +139,7 @@ func helloHandler(t_res http.ResponseWriter, t_ask *http.Request) {
 
 	if t_ask.Method == "GET" {
 		log.Println("hello------", 2)
-		t, err := template.ParseFiles("." + software.CSTPathSep + "html" + software.CSTPathSep + "hello.html")
+		t, err := template.ParseFiles("." + software.CfgSft.Path + "html" + software.CfgSft.Sep + "hello.html")
 		if err != nil {
 			http.Error(t_res, err.Error(), http.StatusInternalServerError)
 			log.Println(err.Error(), http.StatusInternalServerError)

@@ -1,9 +1,10 @@
 package httpserv
+
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"io/ioutil"
-	"encoding/json"
 	"log"
 	"net/http"
 )
@@ -14,93 +15,88 @@ import (
 	"util"
 )
 
-var (
-	staticHandler http.Handler
-)
-
-func DelApp(t_res http.ResponseWriter,t_ask *http.Request){
+func delApp(t_res http.ResponseWriter, t_ask *http.Request) {
 	var bDel = false
 	var nret int
 	log.Println("DelApp called")
 	log.Println(t_ask)
 	if t_ask.Method == "POST" {
-		bts,err := ioutil.ReadAll(t_ask.Body)
+		bts, err := ioutil.ReadAll(t_ask.Body)
 		if err == nil {
-			var sftDel  software.SxSftDel
-			err = json.Unmarshal(bts,&sftDel)
-			if err ==nil {
-				log.Println(sftDel.Mx()+" will be removed")
-				sft ,_,bret:= software.GetSft(sftDel.NamexA)
+			var sftDel software.SxSftDel
+			err = json.Unmarshal(bts, &sftDel)
+			if err == nil {
+				log.Println(sftDel.Mx() + " will be removed")
+				sft, _, bret := software.GetSft(sftDel.NamexA)
 				if bret {
-					err = os.RemoveAll(sft.GetFolderPath(true))
-					if err ==nil {
-						log.Println("remove folder ",sft.GetFolderPath(true))
+					err = os.RemoveAll(sft.GetFolderPath(&software.CfgSft,true))
+					if err == nil {
+						log.Println("remove folder ", sft.GetFolderPath(&software.CfgSft,true))
 						bDel = software.DelSft(sft)
 						if bDel {
-							logx(sftDel.Mx()+" removed successfully")
+							logx(sftDel.Mx() + " removed successfully")
 						} else {
-							logx(sftDel.Mx()+" removed faild")
+							logx(sftDel.Mx() + " removed faild")
 						}
 
 					} else {
-						log.Println("Fail to remove folder ",sft.GetFolderPath(true)+" "+err.Error())
+						log.Println("Fail to remove folder ", sft.GetFolderPath(&software.CfgSft,true)+" "+err.Error())
 					}
 				} else {
-					log.Println(sftDel.Mx()+" is not exist in server")
+					log.Println(sftDel.Mx() + " is not exist in server")
 				}
 			} else {
-				logx("Fail to parse json "+err.Error()+"  "+string(bts))
+				logx("Fail to parse json " + err.Error() + "  " + string(bts))
 				var sftx software.SxSftDel
 				sftx.NamexA = "tst1"
 				sftx.Md5x = "123abc"
 
-				jx,_ := json.Marshal(sftx)
-				logx("C---"+string(bts))
-				logx("S---"+string(jx))
+				jx, _ := json.Marshal(sftx)
+				logx("C---" + string(bts))
+				logx("S---" + string(jx))
 			}
 
-			if bDel==true {
+			if bDel == true {
 				nret = http.StatusFound
 			} else {
 				nret = http.StatusInternalServerError
 			}
-			
-			logx("DelApp res="+fmt.Sprintf("%d",nret))
+
+			logx("DelApp res=" + fmt.Sprintf("%d", nret))
 			//http.Redirect(t_res,t_ask,"./View?id=",nret)
 		} else {
-			logx("fail to read body data  "+err.Error())
+			logx("fail to read body data  " + err.Error())
 		}
 	} else {
-		logx("DelApp  undefined method="+t_ask.Method)
+		logx("DelApp  undefined method=" + t_ask.Method)
 	}
 }
 
-func DownFileHandler(t_res http.ResponseWriter, t_ask *http.Request) {
+func downFileHandler(t_res http.ResponseWriter, t_ask *http.Request) {
 	log.Println("path:" + t_ask.URL.Path)
 
 	var sft software.SxSoft
-	folder,fldID,_ := util.GetPathEle(t_ask.URL.Path)
-	prefix := "/"+folder+"/"
+	folder, fldID, _ := util.GetPathEle(t_ask.URL.Path)
+	prefix := "/" + folder + "/"
 	sft.FolderID = fldID
-	logx("start fileservr("+prefix+" "+sft.GetFolderPath(false)+")")
-	staticFServ := http.StripPrefix(prefix, http.FileServer(http.Dir(sft.GetFolderPath(false))))
+	logx("start fileservr(" + prefix + " " + sft.GetFolderPath(&software.CfgSft,false) + ")")
+	staticFServ := http.StripPrefix(prefix, http.FileServer(http.Dir(sft.GetFolderPath(&software.CfgSft,false))))
 	staticFServ.ServeHTTP(t_res, t_ask)
 }
 
-
-func GetlstApp(t_res http.ResponseWriter,t_ask *http.Request){
+func getlstApp(t_res http.ResponseWriter, t_ask *http.Request) {
 	logx("GetlstApp called")
 
-	if t_ask.Method =="GET" {
-		_,strJson,_ := software.GetSftLst()
+	if t_ask.Method == "GET" {
+		_, strJson, _ := software.GetSftLst()
+		t_res.Header().Set("Content-Type","application/json; charset=utf-8")
 		t_res.Write([]byte(strJson))
 	}
 }
 
-func logx(t_msg string){
-	log.Println("fileserv  ",t_msg)
+func logx(t_msg string) {
+	log.Println("fileserv  ", t_msg)
 }
-
 
 func parseAsk(t_ask *http.Request) bool {
 	muti_reader, _err := t_ask.MultipartReader()
@@ -144,17 +140,32 @@ func parseAsk(t_ask *http.Request) bool {
 	return bfileSave
 }
 
-
 func saveFileBytes(t_f *software.SxSoft, buf []byte) (r_path string, b_ret bool) {
-	folder := t_f.GetFolderPath(true)
+	folder := t_f.GetFolderPath(&software.CfgSft,true)
 	fileServer := folder + t_f.Namexf
 
 	os.MkdirAll(folder, 0711)
 	return util.SaveFileBytes(fileServer, buf)
 }
 
+func StarFileServ() {
+	http.HandleFunc("/uploadx", upload)            //POST upload software
+	http.HandleFunc("/download/", downFileHandler) //GET download file
+	http.HandleFunc("/getlstapp", getlstApp)       //GET app list
+	http.HandleFunc("/delsoft", delApp)            //POST delete software
 
-func Upload(t_res http.ResponseWriter, t_ask *http.Request) {
+	//err := http.ListenAndServe(":1234", nil)
+	err := http.ListenAndServe(":"+software.CfgSft.Port, nil)
+	if err != nil {
+		log.Fatal("ListenAndServe", err.Error())
+		fmt.Println("ListenAndServe 启动服务器失败 ", err.Error())
+	} else {
+		log.Fatal("ListenAndServe 重启动服务器")
+		fmt.Println("ListenAndServe 重启动服务器")
+	}
+}
+
+func upload(t_res http.ResponseWriter, t_ask *http.Request) {
 	if t_ask.Method == "POST" {
 
 		var nret int
@@ -164,7 +175,7 @@ func Upload(t_res http.ResponseWriter, t_ask *http.Request) {
 			nret = http.StatusInternalServerError
 		}
 
-		logx("upload res="+fmt.Sprintf("%d",nret))
+		logx("upload res=" + fmt.Sprintf("%d", nret))
 		//http.Redirect(t_res, t_ask, "./View?id=", nret)
 	}
 }

@@ -14,8 +14,8 @@ import (
 )
 
 const (
-    CstAddr = "http://10.20.11.17:1234/"
-    CstDownload = "http://10.20.11.17:1234/download/"
+    CstAddr = "http://10.20.10.101:1234/"
+    CstDownload = CstAddr+"download/"
 )
 
 func postFile(filename string, targetUrl string,path string) error {
@@ -150,7 +150,7 @@ func main() {
 }
 
 func tstPostFile(){
-    target_url := "http://localhost:1234/uploadx"
+    target_url := CstAddr+"uploadx"
     //filename := ".\\ax1.pdf"
     path := ".\\"//os.Args[1]
     filename := "a.txt"//os.Args[2]
