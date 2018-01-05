@@ -51,9 +51,6 @@ var (
 	wg sync.WaitGroup
 )
 
-func init() {
-	software.M_dbCfg.Init("10.20.10.101", "root", "123456", "deskSafe", "utf8")
-}
 
 func inithttp() {
 	// http.HandleFunc("/", index)

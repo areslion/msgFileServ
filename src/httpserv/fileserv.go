@@ -122,7 +122,7 @@ func parseAsk(t_ask *http.Request) bool {
 	}
 
 	logx("Upload sft " + sft.Msgx())
-	sft.FolderID, bfileSave = software.InsertDB(&sft, &software.M_dbCfg)
+	sft.FolderID, bfileSave = software.InsertDB(&sft, software.M_dbCfg)
 	if buf.Len() > 0 {
 		if bfileSave {
 			_, bfileSave = saveFileBytes(&sft, buf.Bytes())

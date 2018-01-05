@@ -22,14 +22,22 @@ func (p *sxCfg_serF) GetDownloadUlrPre() (r_pre string) {
 	r_pre = "http://" + p.Ip + ":" + p.Port + "/"
 	return
 }
-type sxCfg_db struct{
+type SxCfg_db struct{
 	Ip string `json:"dbip"`
 	Usr string `json:"usr"`
 	Pwd string `json:"pwd"`
+	Dbname string `json:"dbname"`
+	Charset string `json:"charset"`
+}
+func (p* SxCfg_db)GetCntStr()string{
+	cntstr := p.Usr+":"+p.Pwd+"@tcp("+p.Ip+")/"
+	cntstr += p.Dbname+"?charset="+p.Charset
+
+	return cntstr
 }
 type SxCfgAll struct {
 	ServFile sxCfg_serF `json:"depotSft"`
-	Db sxCfg_db `json:"runcfg"`
+	Db SxCfg_db `json:"runcfg"`
 }
 
 func init(){

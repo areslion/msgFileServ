@@ -3,7 +3,9 @@
     {
 			"dbip":"10.20.10.101",
 			"usr":"root",
-			"pwd":"123456"
+			"pwd":"123456",
+			"dbname":"deskSafe",
+			"charset":"utf8"
     },
     "update":
     {

@@ -118,14 +118,14 @@ func (p *SxSftDel) Mx() (r_msg string) {
 }
 
 var (
-	M_dbCfg dbbase.SCfg
+	M_dbCfg *util.SxCfgAll
 )
 
 func init() {
-
+	M_dbCfg = util.GetSftCfg()
 }
 
-func InsertDB(sft *SxSoft, cfg *dbbase.SCfg) (r_folderId string, b_ret bool) {
+func InsertDB(sft *SxSoft, cfg *util.SxCfgAll) (r_folderId string, b_ret bool) {
 	cnt, bret := dbbase.Open(cfg)
 	if bret == false {
 		return "", false
@@ -186,7 +186,7 @@ func GetSft(t_name string) (r_sft *SxSoft, r_folderid string, b_ret bool) {
 	sqlcmd += "FROM depotSft "
 	sqlcmd += "WHERE namexa = ? "
 
-	cnt, bret := dbbase.Open(&M_dbCfg)
+	cnt, bret := dbbase.Open(util.GetSftCfg())
 	if bret == false {
 		return nil, "", false
 	}
@@ -217,7 +217,7 @@ func GetSft(t_name string) (r_sft *SxSoft, r_folderid string, b_ret bool) {
 }
 
 func DelSft(t_sft *SxSoft) bool {
-	cnt, bret := dbbase.Open(&M_dbCfg)
+	cnt, bret := dbbase.Open(util.GetSftCfg())
 	if bret == false {
 		return false
 	}
@@ -243,9 +243,9 @@ func DelSft(t_sft *SxSoft) bool {
 func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
 	sqlcmd := "SELECT namexf,namexa,ver,pathx,pathIcon,flagSft,md5x,folderId,descx FROM depotSft "
 
-	cnt, bret := dbbase.Open(&M_dbCfg)
+	cnt, bret := dbbase.Open(util.GetSftCfg())
 	if bret == false {
-		logx("GetSftLst  fail to open db " + M_dbCfg.GetCntStr())
+		logx("GetSftLst  fail to open db " + M_dbCfg.Db.GetCntStr())
 		return nil, "", false
 	}
 	defer dbbase.Close()

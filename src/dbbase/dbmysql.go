@@ -5,6 +5,9 @@ import(
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 )
+import(
+	"util"
+)
 
 
 type SCfg struct{
@@ -30,14 +33,14 @@ func (p* SCfg)GetCntStr()string{
 
 
 var (
-	m_cfgdb SCfg
+	m_cfgdb *util.SxCfgAll
 	m_dbcnt	*sql.DB
 )
 
 func Tstmysql() bool {
 
 	var err error
-	strcnt := initCfg()
+	strcnt := m_cfgdb.Db.GetCntStr()
 	m_dbcnt,err = sql.Open("mysql",strcnt)
 	if(err!=nil){
 		logx("Fail to open db "+err.Error())
@@ -54,32 +57,19 @@ func Tstmysql() bool {
 	return true
 }
 
-func Open(cfg *SCfg)(r_cnt *sql.DB,r_res bool){
-	m_cfgdb = *cfg
+func Open(cfg *util.SxCfgAll)(r_cnt *sql.DB,r_res bool){
+	m_cfgdb = cfg
 
 	var err error
-	m_dbcnt,err = sql.Open("mysql",m_cfgdb.GetCntStr())
+	m_dbcnt,err = sql.Open("mysql",m_cfgdb.Db.GetCntStr())
 	if(err!=nil){
-		logx("Fail to open db "+err.Error()+" "+m_cfgdb.GetCntStr())
+		logx("Fail to open db "+err.Error()+" "+m_cfgdb.Db.GetCntStr())
 		return nil,false
 	}
 	return m_dbcnt,true;
 }
 func Close(){
 	m_dbcnt.Close()
-}
-
-func initCfg()string {	
-	m_cfgdb.charset = "utf8"
-	m_cfgdb.dbname = "deskSafe"
-	m_cfgdb.hostIP = "10.20.10.101"
-	m_cfgdb.usrname = "root"
-	m_cfgdb.password = "123456"
-
-	cntstr := m_cfgdb.usrname+":"+m_cfgdb.password+"@tcp("+m_cfgdb.hostIP+")/"
-	cntstr += m_cfgdb.dbname+"?charset="+m_cfgdb.charset
-
-	return cntstr
 }
 
 
