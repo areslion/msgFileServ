@@ -36,6 +36,11 @@
 		"ip":"10.20.11.17",
 		"port":"1234",
 		"sep":"\\",
-		"path":"e:\\workspace\\005.XNKJ\\tstFilServ\\"
+		"path":"e:\\workspace\\005.XNKJ\\tstFilServ\\",
+		"logA":".\\htf.log",
+		"logB":".\\htf_BK.log",
+		"LogM":10240,
+		"logLevel":1,
+		"LogObj":3
 	}
 }

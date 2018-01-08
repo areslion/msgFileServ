@@ -17,6 +17,11 @@ type sxCfg_serF struct {
 	Port string `json:"port"`
 	Sep  string `json:"sep"`
 	Path string `json:"path"`
+	LogA string `json:"logA"`
+	LogB string `json:"logB"`
+	LogM int `json:"logM"`
+	LogLev int `json:"logLevel"`
+	LogObj int `json:"logObj"`
 }
 func (p *sxCfg_serF) GetDownloadUlrPre() (r_pre string) {
 	r_pre = "http://" + p.Ip + ":" + p.Port + "/"
@@ -61,6 +66,8 @@ func getRunCfg() {
 	}
 
 	log.Println("run cfg ", m_runcfg)
+	var px *sxCfg_serF  = &m_runcfg.ServFile
+	InitLog(px.LogA,px.LogB,px.LogLev,px.LogObj,px.LogM)
 }
 
 func getCfgPath()(r_path string){

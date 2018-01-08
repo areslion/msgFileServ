@@ -75,7 +75,7 @@ func (p *SxSoft) Set(t_part *multipart.Part) bool {
 	} else if t_part.FormName() == cst_7md5 {
 		p.Md5x = valx
 	} else {
-		logx("SxSoft  undefed part " + t_part.FormName())
+		util.L3E("SxSoft  undefed part " + t_part.FormName())
 		return false
 	}
 	return true
@@ -139,13 +139,13 @@ func InsertDB(sft *SxSoft, cfg *util.SxCfgAll) (r_folderId string, b_ret bool) {
 	sqlcmd += "VALUES(?,?,?,?,?,?,?,?,?)"
 	smt, err := cnt.Prepare(sqlcmd)
 	if err != nil {
-		logx("InsertDB  fail to Prepare " + err.Error())
+		util.L3E("InsertDB  fail to Prepare " + err.Error())
 		return "", false
 	}
 
 	_, err = smt.Exec(sft.Namexf, sft.Namexa, sft.Ver, sft.Pathx, sft.PathIcon, sft.FlgSft, sft.Md5x, sft.FolderID, sft.Desc)
 	if err != nil {
-		logx("saveNewSft  " + err.Error())
+		util.L4F("saveNewSft  " + err.Error())
 		return "", false
 	}
 
@@ -159,14 +159,14 @@ func getFolderID(t_db *sql.DB, t_fileNmae string) (r_id string) {
 
 	smt, err := t_db.Prepare(sqlcmd)
 	if err != nil {
-		logx("getFolderID  fail to Prepare " + err.Error())
+		util.L4F("getFolderID  fail to Prepare " + err.Error())
 		var folderid string
 		return folderid
 	}
 
 	rows, err := smt.Query(t_fileNmae)
 	if err != nil {
-		logx("getFolderID  " + err.Error())
+		util.L4F("getFolderID  " + err.Error())
 		return util.Guid()
 	}
 
@@ -195,13 +195,13 @@ func GetSft(t_name string) (r_sft *SxSoft, r_folderid string, b_ret bool) {
 
 	smt, err := cnt.Prepare(sqlcmd)
 	if err != nil {
-		logx("GetSft  fail to Prepare " + err.Error())
+		util.L4F("GetSft  fail to Prepare " + err.Error())
 		return nil, "", false
 	}
 
 	rows, err := smt.Query(t_name)
 	if err != nil {
-		logx("GetSft  " + err.Error())
+		util.L4F("GetSft  " + err.Error())
 		return nil, "", false
 	}
 
@@ -227,13 +227,13 @@ func DelSft(t_sft *SxSoft) bool {
 	sqlcmd := "DELETE FROM depotSft WHERE namexa = ? "
 	smt, err := cnt.Prepare(sqlcmd)
 	if err != nil {
-		logx("DelSft  fail to Prepare " + err.Error())
+		util.L4F("DelSft  fail to Prepare " + err.Error())
 		return false
 	}
 
 	_, err = smt.Exec(t_sft.Namexa)
 	if err != nil {
-		logx("DelSft  " + err.Error())
+		util.L4F("DelSft  " + err.Error())
 		return false
 	}
 
@@ -245,7 +245,7 @@ func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
 
 	cnt, bret := dbbase.Open(util.GetSftCfg())
 	if bret == false {
-		logx("GetSftLst  fail to open db " + M_dbCfg.Db.GetCntStr())
+		util.L4F("GetSftLst  fail to open db " + M_dbCfg.Db.GetCntStr())
 		return nil, "", false
 	}
 	defer dbbase.Close()
@@ -253,13 +253,13 @@ func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
 
 	smt, err := cnt.Prepare(sqlcmd)
 	if err != nil {
-		logx("GetSftLst  fail to Prepare " + err.Error())
+		util.L4F("GetSftLst  fail to Prepare " + err.Error())
 		return nil, "", false
 	}
 
 	rows, err := smt.Query()
 	if err != nil {
-		logx("GetSft fail to Query " + err.Error())
+		util.L4F("GetSft fail to Query " + err.Error())
 		return nil, "", false
 	}
 
@@ -285,7 +285,7 @@ func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
 	jx, _ := json.Marshal(lstar)
 	strRetJson := "{\"repoAppList\":" + string(jx) + "}"
 
-	logx("GetSft num=" + fmt.Sprintf("%v", len(lstar)))
+	util.L4F("GetSft num=" + fmt.Sprintf("%v", len(lstar)))
 	return lstSft, strRetJson, true
 }
 
@@ -293,8 +293,4 @@ func strx(t_ii string) string {
 	var ret string
 	ret = "'" + t_ii + "'"
 	return ret
-}
-
-func logx(t_msg string) {
-	log.Println("depot  " + t_msg)
 }

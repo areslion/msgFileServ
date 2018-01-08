@@ -51,6 +51,9 @@ var (
 	wg sync.WaitGroup
 )
 
+func init(){
+	//log.SetFlags(log.LstdFlags|log.Lshortfile)
+}
 
 func inithttp() {
 	// http.HandleFunc("/", index)
@@ -80,6 +83,11 @@ func inithttp() {
 func main() {
 	//inithttp()
 	//tstdatabase()
+	util.L1T("----------------------4")
+	util.L2I("----------------------5")
+	util.L3E("----------------------6")
+	util.L4F("----------------------7")
+	
 	mutiRun()
 }
 
@@ -164,6 +172,3 @@ func tstDownload() {
 	io.Copy(f, res.Body)
 }
 
-func logx(t_msg string) {
-	log.Println("serHttpFile  " + t_msg)
-}

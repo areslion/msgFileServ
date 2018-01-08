@@ -29,31 +29,31 @@ func delApp(t_res http.ResponseWriter, t_ask *http.Request) {
 				log.Println(sftDel.Mx() + " will be removed")
 				sft, _, bret := software.GetSft(sftDel.NamexA)
 				if bret {
-					err = os.RemoveAll(sft.GetFolderPath(software.CfgSft,true))
+					err = os.RemoveAll(sft.GetFolderPath(software.CfgSft, true))
 					if err == nil {
-						log.Println("remove folder ", sft.GetFolderPath(software.CfgSft,true))
+						log.Println("remove folder ", sft.GetFolderPath(software.CfgSft, true))
 						bDel = software.DelSft(sft)
 						if bDel {
-							logx(sftDel.Mx() + " removed successfully")
+							util.L2I(sftDel.Mx() + " removed successfully")
 						} else {
-							logx(sftDel.Mx() + " removed faild")
+							util.L3E(sftDel.Mx() + " removed faild")
 						}
 
 					} else {
-						log.Println("Fail to remove folder ", sft.GetFolderPath(software.CfgSft,true)+" "+err.Error())
+						log.Println("Fail to remove folder ", sft.GetFolderPath(software.CfgSft, true)+" "+err.Error())
 					}
 				} else {
 					log.Println(sftDel.Mx() + " is not exist in server")
 				}
 			} else {
-				logx("Fail to parse json " + err.Error() + "  " + string(bts))
+				util.L4F("Fail to parse json " + err.Error() + "  " + string(bts))
 				var sftx software.SxSftDel
 				sftx.NamexA = "tst1"
 				sftx.Md5x = "123abc"
 
 				jx, _ := json.Marshal(sftx)
-				logx("C---" + string(bts))
-				logx("S---" + string(jx))
+				util.L2I("C---" + string(bts))
+				util.L2I("S---" + string(jx))
 			}
 
 			if bDel == true {
@@ -62,13 +62,13 @@ func delApp(t_res http.ResponseWriter, t_ask *http.Request) {
 				nret = http.StatusInternalServerError
 			}
 
-			logx("DelApp res=" + fmt.Sprintf("%d", nret))
+			util.L2I("DelApp res=" + fmt.Sprintf("%d", nret))
 			//http.Redirect(t_res,t_ask,"./View?id=",nret)
 		} else {
-			logx("fail to read body data  " + err.Error())
+			util.L3E("fail to read body data  " + err.Error())
 		}
 	} else {
-		logx("DelApp  undefined method=" + t_ask.Method)
+		util.L3E("DelApp  undefined method=" + t_ask.Method)
 	}
 }
 
@@ -79,24 +79,21 @@ func downFileHandler(t_res http.ResponseWriter, t_ask *http.Request) {
 	folder, fldID, _ := util.GetPathEle(t_ask.URL.Path)
 	prefix := "/" + folder + "/"
 	sft.FolderID = fldID
-	logx("start fileservr(" + prefix + " " + sft.GetFolderPath(software.CfgSft,false) + ")")
-	staticFServ := http.StripPrefix(prefix, http.FileServer(http.Dir(sft.GetFolderPath(software.CfgSft,false))))
+	util.L2I("start fileservr(" + prefix + " " + sft.GetFolderPath(software.CfgSft, false) + ")")
+	staticFServ := http.StripPrefix(prefix, http.FileServer(http.Dir(sft.GetFolderPath(software.CfgSft, false))))
 	staticFServ.ServeHTTP(t_res, t_ask)
 }
 
 func getlstApp(t_res http.ResponseWriter, t_ask *http.Request) {
-	logx("GetlstApp called")
+	util.L2I("GetlstApp called")
 
 	if t_ask.Method == "GET" {
 		_, strJson, _ := software.GetSftLst()
-		t_res.Header().Set("Content-Type","application/json; charset=utf-8")
+		t_res.Header().Set("Content-Type", "application/json; charset=utf-8")
 		t_res.Write([]byte(strJson))
 	}
 }
 
-func logx(t_msg string) {
-	log.Println("fileserv  ", t_msg)
-}
 
 func parseAsk(t_ask *http.Request) bool {
 	muti_reader, _err := t_ask.MultipartReader()
@@ -121,19 +118,19 @@ func parseAsk(t_ask *http.Request) bool {
 		}
 	}
 
-	logx("Upload sft " + sft.Msgx())
+	util.L2I("Upload sft " + sft.Msgx())
 	sft.FolderID, bfileSave = software.InsertDB(&sft, software.M_dbCfg)
 	if buf.Len() > 0 {
 		if bfileSave {
 			_, bfileSave = saveFileBytes(&sft, buf.Bytes())
 			if bfileSave {
-				logx("Upload sft " + sft.Msgx() + " successfully")
+				util.L2I("Upload sft " + sft.Msgx() + " successfully")
 			} else {
-				logx("Upload sft " + sft.Msgx() + " failed")
+				util.L3E("Upload sft " + sft.Msgx() + " failed")
 			}
 
 		} else {
-			logx("Upload sft " + sft.Msgx() + " Insert into db failed")
+			util.L4F("Upload sft " + sft.Msgx() + " Insert into db failed")
 		}
 	}
 
@@ -141,7 +138,7 @@ func parseAsk(t_ask *http.Request) bool {
 }
 
 func saveFileBytes(t_f *software.SxSoft, buf []byte) (r_path string, b_ret bool) {
-	folder := t_f.GetFolderPath(software.CfgSft,true)
+	folder := t_f.GetFolderPath(software.CfgSft, true)
 	fileServer := folder + t_f.Namexf
 
 	os.MkdirAll(folder, 0711)
@@ -175,7 +172,7 @@ func upload(t_res http.ResponseWriter, t_ask *http.Request) {
 			nret = http.StatusInternalServerError
 		}
 
-		logx("upload res=" + fmt.Sprintf("%d", nret))
+		util.L2I("upload res=" + fmt.Sprintf("%d", nret))
 		//http.Redirect(t_res, t_ask, "./View?id=", nret)
 	}
 }

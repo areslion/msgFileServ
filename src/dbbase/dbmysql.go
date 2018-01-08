@@ -3,7 +3,6 @@ package dbbase
 import(	
 	"database/sql"	
 	_ "github.com/go-sql-driver/mysql"
-	"log"
 )
 import(
 	"util"
@@ -43,14 +42,14 @@ func Tstmysql() bool {
 	strcnt := m_cfgdb.Db.GetCntStr()
 	m_dbcnt,err = sql.Open("mysql",strcnt)
 	if(err!=nil){
-		logx("Fail to open db "+err.Error())
+		util.L3E("Fail to open db "+err.Error())
 		return false
 	}
 	defer m_dbcnt.Close()
 
 	rows,err := m_dbcnt.Query("SELECT numDev from terDevBasicInfo")
 	if(err!=nil){
-		logx("Fail to select data "+err.Error())
+		util.L3E("Fail to select data "+err.Error())
 	}
 	showRows(rows)
 
@@ -63,7 +62,7 @@ func Open(cfg *util.SxCfgAll)(r_cnt *sql.DB,r_res bool){
 	var err error
 	m_dbcnt,err = sql.Open("mysql",m_cfgdb.Db.GetCntStr())
 	if(err!=nil){
-		logx("Fail to open db "+err.Error()+" "+m_cfgdb.Db.GetCntStr())
+		util.L4F("Fail to open db "+err.Error()+" "+m_cfgdb.Db.GetCntStr())
 		return nil,false
 	}
 	return m_dbcnt,true;
@@ -73,9 +72,6 @@ func Close(){
 }
 
 
-func logx(t_msg string){
-	log.Println("dbmysql  "+t_msg)
-}
 
 func showRows(t_rows *sql.Rows){
 	var numDev string
@@ -84,7 +80,7 @@ func showRows(t_rows *sql.Rows){
 		
 		err := t_rows.Scan(&numDev)
 		if(err==nil) {
-			logx("Res:"+numDev)
+			util.L1T("Res:"+numDev)
 		}
 	}
 }

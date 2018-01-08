@@ -3,6 +3,7 @@ import(
 	"log"
 	"os"
 	"fmt"
+
 	"github.com/satori/go.uuid"
 )
 const (
@@ -18,9 +19,6 @@ func IsExists(path string) bool {
 	return os.IsExist(err)
 }
 
-func logx(t_msg string){
-	log.Println("file  "+t_msg)
-}
 
 func GetPathEle(t_path string)(r_file,r_fldID,r_Folder string){
 	var lstStr [100]string
@@ -54,14 +52,23 @@ func GetPathEle(t_path string)(r_file,r_fldID,r_Folder string){
 				folder = folder +"/"+ lstStr [ix]
 			}
 		}
-		log.Println(ix,folder)
+		//log.Println(ix,folder)
 		ix++
 	}
 
-	log.Println(t_path)
-	log.Println(folder,"|",filex)
+	// log.Println(t_path)
+	// log.Println(folder,"|",filex)
 
 	return folder,folderID,filex
+}
+
+func GetFileSize(t_path string) (r_size int){
+	fx, err := os.Stat(t_path)
+	if err == nil {
+		r_size = int(fx.Size())
+	}
+
+	return
 }
 
 func SaveFileBytes(filename string,buf [] byte) (r_path string, b_ret bool){
