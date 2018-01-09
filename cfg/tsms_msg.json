@@ -1,0 +1,27 @@
+{
+    "name":"消息名称清理并关机",
+    "guid":"3df14519-e614-11e7-b19f-78acc0f87b6a",
+    "tmx":"2018-1-9 10:59:29",
+    "tmy":"2018-1-9 10:59:51",
+    "sender":"754cc81fe33ab91d75565e0f3dd0c986",
+    "os":7,
+    "auto":1,
+    "popupwindow":1,
+    "desc":"选阅读说明，然后执行清理，最后关机",
+    "reciever":[
+        {"guid":"754cc81fe33ab91d75565e0f3dd0c901"},
+        {"guid":"754cc81fe33ab91d75565e0f3dd0c902"},
+        {"guid":"754cc81fe33ab91d75565e0f3dd0c903"},
+        {"guid":"754cc81fe33ab91d75565e0f3dd0c904"}
+    ],
+    "attachement":[
+        {"index":0,"filename":"readme.txt","url":"http://123"},
+        {"index":1,"filename":"clean.bat","url":"http://123"},
+        {"index":2,"filename":"shutdown.bat","url":"http://123"}
+    ],
+    "tmExc":[
+        {"tmx":"13:30:00","tmy":"14:00:00"},
+        {"tmx":"15:30:00","tmy":"16:00:00"},
+        {"tmx":"17:30:00","tmy":"18:00:00"}
+    ]
+}

@@ -21,6 +21,29 @@ const (
     CstDownload = CstAddr+"download/"
 )
 
+// sample usage
+func main() {
+    nsel := flag.Int("sel",0,"choice functon")
+
+    flag.Parse()
+    log.Println("choice sel=",*nsel)
+    switch *nsel {
+    case 0:
+        tstPostFile()
+    case 1:
+        delSft()
+    case 2:
+        getlstAPP()
+    case 3:
+        getFile("go1.9.2.windows-amd64.msi","7d68d66c-e201-4aea-9a2f-7a677e984ed9/go1.9.2.windows-amd64.msi")
+    case 20:
+        postMutiFile("a.txt",CstAddr+"msgfile/newmsg",".\\")
+    default:
+        panic("undefine parameter")
+    }
+    
+}
+
 func postFile(filename string, targetUrl string,path string) error {
     bodyBuf := &bytes.Buffer{}
     bodyWriter := multipart.NewWriter(bodyBuf)
@@ -62,6 +85,51 @@ func postFile(filename string, targetUrl string,path string) error {
     return nil
 }
 
+
+func postMutiFile(filename string, targetUrl string,path string) error {
+    bodyBuf := &bytes.Buffer{}
+    bodyWriter := multipart.NewWriter(bodyBuf)
+
+    //关键的一步操作
+    fileWriter, err := bodyWriter.CreateFormFile("file", filename)
+    if err != nil {
+        fmt.Println("error writing to buffer")
+        return err
+    }
+
+    //打开文件句柄操作
+    fh, err := os.Open(path+filename)
+    if err != nil {
+        fmt.Println("error opening file")
+        return err
+    }
+
+    //iocopy
+    _, err = io.Copy(fileWriter, fh)
+    if err != nil {
+        return err
+    }
+
+    fileWriter2, err := bodyWriter.CreateFormFile("file", "XX_"+filename)
+    fh2, err := os.Open(path+filename)
+    _, err = io.Copy(fileWriter2, fh2)
+
+    contentType := bodyWriter.FormDataContentType()
+    bodyWriter.Close()
+
+    resp, err := http.Post(targetUrl, contentType, bodyBuf)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+    resp_body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return err
+    }
+    fmt.Println(resp.Status)
+    fmt.Println(string(resp_body))
+    return nil
+}
 
 
 func postFileEx(filename string, targetUrl string,path string) error {
@@ -131,26 +199,7 @@ func postMutiForm(){
 }
 
 
-// sample usage
-func main() {
-    nsel := flag.Int("sel",0,"choice functon")
 
-    flag.Parse()
-    log.Println("choice sel=",*nsel)
-    switch *nsel {
-    case 0:
-        tstPostFile()
-    case 1:
-        delSft()
-    case 2:
-        getlstAPP()
-    case 3:
-        getFile("go1.9.2.windows-amd64.msi","7d68d66c-e201-4aea-9a2f-7a677e984ed9/go1.9.2.windows-amd64.msi")
-    default:
-        panic("undefine parameter")
-    }
-    
-}
 
 func tstPostFile(){
     target_url := CstAddr+"uploadx"

@@ -13,7 +13,8 @@ import (
 	"sync"
 )
 import (
-	"httpserv"
+	"httpserv/servMsg"
+	"httpserv/servFile"
 	"software"
 	"util"
 )
@@ -55,48 +56,17 @@ func init(){
 	//log.SetFlags(log.LstdFlags|log.Lshortfile)
 }
 
-func inithttp() {
-	// http.HandleFunc("/", index)
-	// http.HandleFunc("/view", ViewHandler)
-	// http.HandleFunc("/hello", helloHandler)
-//	http.HandleFunc("www.a.com/hello", helloHandler)
-
-	// http.HandleFunc("/uploadx", httpserv.Upload)            //POST upload software
-	// http.HandleFunc("/download/", httpserv.DownFileHandler) //GET download file
-	// http.HandleFunc("/getlstapp", httpserv.GetlstApp)       //GET app list
-	// http.HandleFunc("/delsoft", httpserv.DelApp)            //POST delete software
-
-	// err := http.ListenAndServe(":1234", nil)
-	// if err != nil {
-	// 	log.Fatal("ListenAndServe", err.Error())
-	// 	fmt.Println("ListenAndServe 启动服务器失败 ", err.Error())
-	// } else {
-	// 	log.Fatal("ListenAndServe 重启动服务器")
-	// 	fmt.Println("ListenAndServe 重启动服务器")
-	// }
-
-	httpserv.StarFileServ()
-
-	wg.Done()
-}
 
 func main() {
-	//inithttp()
-	//tstdatabase()
-	util.L1T("----------------------4")
-	util.L2I("----------------------5")
-	util.L3E("----------------------6")
-	util.L4F("----------------------7")
-	
 	mutiRun()
 }
 
 func mutiRun() {
 	runtime.GOMAXPROCS(1)
-	wg.Add(2)
+	wg.Add(1)
 
-	go inithttp()
-	go tstdatabase()
+	go servFile.StarFileServ()
+	go servMsg.StartServMsg(util.GetSftCfg())
 
 	wg.Wait()
 }

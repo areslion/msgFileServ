@@ -17,6 +17,28 @@ const (
 
 // sample usage
 func main() {
+    tstArray()
+}
+
+func tstArray(){
+    var ax1  [5]int
+    var ax2 = new([5]int)
+
+    for ix,_ := range ax1 { ax1[ix]=ix }
+    for ix,_ := range ax2 { ax2[ix]=ix*2 }
+
+    log.Println("ax1 ",ax1)
+    log.Println("ax2 ",ax2)
+
+    showArray(ax1[:])
+    showArray(ax2[:])
+}
+
+func showArray(t_lst []int){
+    log.Println(t_lst)
+}
+
+func tstHttpF(){
 	nsel := flag.Int("sel",0,"choice functon")
 
     flag.Parse()
