@@ -3,21 +3,23 @@
     "guid":"3df14519-e614-11e7-b19f-78acc0f87b6a",
     "tmx":"2018-1-9 10:59:29",
     "tmy":"2018-1-9 10:59:51",
+    "tmexc":"2018-1-11 16:59:17",
     "sender":"754cc81fe33ab91d75565e0f3dd0c986",
     "os":7,
     "auto":1,
     "popupwindow":1,
     "desc":"选阅读说明，然后执行清理，最后关机",
-    "reciever":[
-        {"guid":"754cc81fe33ab91d75565e0f3dd0c901"},
+    "status":1,
+     "reciever":[
+        {"guid":"754cc81fe33ab91d75565e0f3dd0c986"},
         {"guid":"754cc81fe33ab91d75565e0f3dd0c902"},
         {"guid":"754cc81fe33ab91d75565e0f3dd0c903"},
         {"guid":"754cc81fe33ab91d75565e0f3dd0c904"}
     ],
     "attachement":[
-        {"index":0,"filename":"readme.txt","url":"http://123"},
-        {"index":1,"filename":"clean.bat","url":"http://123"},
-        {"index":2,"filename":"shutdown.bat","url":"http://123"}
+        {"index":0,"filename":"readme.txt","url":"http://123","desc":"t1","size":"1M"},
+        {"index":1,"filename":"clean.bat","url":"http://123","desc":"t2","size":"2M"},
+        {"index":2,"filename":"shutdown.bat","url":"http://123","desc":"t3","size":"3M"}
     ],
     "tmExc":[
         {"tmx":"13:30:00","tmy":"14:00:00"},

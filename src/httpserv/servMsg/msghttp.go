@@ -18,6 +18,7 @@ type sxAttEle struct{
 
 func init(){
 	http.HandleFunc("/msgfile/newmsg", newmsg)            //POST upload software
+	http.HandleFunc("/msgfile/usrget", usrget)            //POST upload software
 }
 
 func newmsg(t_res http.ResponseWriter, t_ask *http.Request) {
@@ -72,4 +73,34 @@ func parseAsk(t_ask *http.Request) (r_ret bool) {
 	}
 
 	return bfileSave
+}
+
+func usrget(t_res http.ResponseWriter,t_ask *http.Request){
+	util.L2I(t_ask.Method)
+
+	if t_ask.Method == "GET" {
+		idx := t_ask.FormValue("id")
+		npage := t_ask.FormValue("page")
+		nlimt := t_ask.FormValue("limit")
+		nstatu := t_ask.FormValue("status")
+
+		bts := getUsrMsg(idx,npage,nlimt,nstatu)
+		t_res.Header().Set("Content-Type", "application/json; charset=utf-8")
+		t_res.Write(bts)
+	}
+
+
+
+	// util.L2I(fmt.Sprintf("%v",t_ask.URL))
+
+	// urlRes,_ := url.Parse(t_ask.RequestURI)
+	// util.L2I(fmt.Sprintf("%v",urlRes))
+
+	// urlV := urlRes.Query()
+	// util.L2I(fmt.Sprintf("%v",urlV))
+	// for ix,itm := range urlV {
+	// 	util.L2I(fmt.Sprintf("%v  %v",ix,itm))
+	// }
+
+	// log.Println(t_ask.FormValue("name2"))
 }
