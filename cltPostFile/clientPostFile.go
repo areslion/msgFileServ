@@ -5,8 +5,8 @@ import (
 "bytes"
 "fmt"
 "io"
-"io/ioutil"
 "mime/multipart"
+"io/ioutil"
 "net/http"
 "os"
 "log"
@@ -19,6 +19,9 @@ const (
 
     CstAddr = "http://10.20.11.17:1234/"
     CstDownload = CstAddr+"download/"
+
+    cstmsg = CstAddr+"msgfile/"
+    cstmsgnew = cstmsg+"newmsg"
 )
 
 // sample usage
@@ -27,6 +30,7 @@ func main() {
 
     flag.Parse()
     log.Println("choice sel=",*nsel)
+
     switch *nsel {
     case 0:
         tstPostFile()
@@ -37,7 +41,7 @@ func main() {
     case 3:
         getFile("go1.9.2.windows-amd64.msi","7d68d66c-e201-4aea-9a2f-7a677e984ed9/go1.9.2.windows-amd64.msi")
     case 20:
-        postMutiFile("a.txt",CstAddr+"msgfile/newmsg",".\\")
+        postfileMsg()
     default:
         panic("undefine parameter")
     }
@@ -131,6 +135,12 @@ func postMutiFile(filename string, targetUrl string,path string) error {
     return nil
 }
 
+func newFileFormx(t_formname,t_filename ,t_path string,wter *multipart.Writer){
+    fileWriter2, _ := wter.CreateFormFile(t_formname, t_filename)
+    fh2, _ := os.Open(t_path)
+    _, _ = io.Copy(fileWriter2, fh2)
+}
+
 
 func postFileEx(filename string, targetUrl string,path string) error {
     bodyBuf := &bytes.Buffer{}
@@ -198,7 +208,33 @@ func postMutiForm(){
     
 }
 
+func postfileMsg(){
+    bodyBuf := &bytes.Buffer{}
+    bodyWriter := multipart.NewWriter(bodyBuf)
 
+    btsDesc ,_:= ioutil.ReadFile(".\\cfg\\tsms_msg.json")
+    newForm(bodyWriter,"description","",string(btsDesc))
+    newFileFormx("attachment","a.txt",".\\cfg\\tsms_msg.json",bodyWriter)
+    newFileFormx("attachment","b.bat",".\\cfg\\tsms_msg.json",bodyWriter)
+    newFileFormx("attachment","c.docx",".\\cfg\\tsms_msg.json",bodyWriter)
+
+    contentType := bodyWriter.FormDataContentType()
+    bodyWriter.Close()
+    resp, err := http.Post(cstmsgnew, contentType, bodyBuf)
+    //resp, err := http.Post(cstmsgnew, "", nil)
+    if err != nil {
+        return
+    }
+    defer resp.Body.Close()
+    
+    resp_body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return
+    }
+    fmt.Println(resp.Status)
+    fmt.Println(string(resp_body))
+    return
+}
 
 
 func tstPostFile(){

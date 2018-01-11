@@ -87,7 +87,7 @@ func (p *SxSoft) SetPath(t_x string) {
 	p.Pathx = t_x
 }
 func (p *SxSoft) GetFolderPath(t_cfg *util.SxCfgAll, t_endsep bool) (r_folderPath string) { //获取文件仓库文件夹的路径
-	folder := t_cfg.ServFile.Path + t_cfg.ServFile.Sep + p.FolderID
+	folder := t_cfg.ServFile.PathSft + t_cfg.ServFile.Sep + p.FolderID
 	if t_endsep == true {
 		folder += t_cfg.ServFile.Sep
 	}

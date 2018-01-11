@@ -8,7 +8,7 @@ import (
 
 const (
 	cst_cfgPath_linux = "/wsp/tsms/cfg/tsms_run.json"
-	cst_cfgPath_windows = ".\\tsms_run.json"
+	cst_cfgPath_windows = ".\\cfg\\tsms_run.json"
 )
 var m_runcfg SxCfgAll
 
@@ -16,7 +16,8 @@ type sxCfg_serF struct {
 	Ip   string `json:"ip"`
 	Port string `json:"port"`
 	Sep  string `json:"sep"`
-	Path string `json:"path"`
+	PathSft string `json:"pathSft"`
+	PathMsg string `json:"pathMsg"`
 	LogA string `json:"logA"`
 	LogB string `json:"logB"`
 	LogM int `json:"logM"`
@@ -39,6 +40,9 @@ func (p* SxCfg_db)GetCntStr()string{
 	cntstr += p.Dbname+"?charset="+p.Charset
 
 	return cntstr
+}
+type sxCfg_serMsg struct{
+	Path string `json:"path"`
 }
 type SxCfgAll struct {
 	ServFile sxCfg_serF `json:"depotSft"`
@@ -79,6 +83,20 @@ func getCfgPath()(r_path string){
 		
 	default:
 		r_path = cst_cfgPath_linux		
+	}
+
+	return
+}
+
+func GetOSSeptor()(r_sep string){
+	switch runtime.GOOS {
+	case "windows":
+		r_sep = "\\"
+	case "linux":
+		r_sep = "/"
+		
+	default:
+		r_sep = ""		
 	}
 
 	return

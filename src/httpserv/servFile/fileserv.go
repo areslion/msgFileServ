@@ -163,6 +163,7 @@ func StarFileServ() {
 }
 
 func upload(t_res http.ResponseWriter, t_ask *http.Request) {
+	util.L2I(t_ask.Method)
 	if t_ask.Method == "POST" {
 
 		var nret int
