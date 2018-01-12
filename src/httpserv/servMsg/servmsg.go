@@ -49,7 +49,7 @@ type sxMsg struct {
 	Auto     int          `json:"auto"`
 	Popup    int          `json:"popupwindow"`
 	Desc     string       `json:"desc"`
-	Status	 string		  `json:"status"`
+	Status	 int		  `json:"status"`
 	Reciever []sxReciever `json:"reciever"`
 	Attach   []sxAttatche `json:"attachement"`
 	Exctm    []sxExctm    `json:"tmExc"`
