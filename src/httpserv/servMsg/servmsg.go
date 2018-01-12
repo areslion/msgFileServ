@@ -207,8 +207,8 @@ func insertAbstract(t_cnn *sql.DB,t_msg *sxMsg) (b_ret bool) {
 }
 
 func insertSender(t_cnn *sql.DB,t_msg *sxMsg) (b_ret bool) {
-	sqlcmd := "REPLACE INTO msgSend (numMsg,numReciever,tmm)"
-	sqlcmd += "VALUE(?,?,?)"
+	sqlcmd := "REPLACE INTO msgSend (numMsg,numReciever,tmm,tmx,tmy,namex,descx)"
+	sqlcmd += "VALUE(?,?,?,?,?,?,?)"
 	smt, err := t_cnn.Prepare(sqlcmd)
 	if err != nil {
 		util.L3E("insertSender  fail to Prepare " + err.Error())
@@ -219,7 +219,7 @@ func insertSender(t_cnn *sql.DB,t_msg *sxMsg) (b_ret bool) {
 	tmNow := time.Now().Format("2006-01-02 15:04:05")
 
 	for ix,item := range t_msg.Reciever{
-		_, err = smt.Exec(px.Guid,item.Guid,tmNow)
+		_, err = smt.Exec(px.Guid,item.Guid,tmNow,px.Tmx,px.Tmy,px.Name,px.Desc)
 		if err != nil {
 			util.L4F("saveNewSft  " + err.Error())
 			return
