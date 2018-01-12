@@ -25,7 +25,7 @@ type sxCfg_serF struct {
 	LogObj int `json:"logObj"`
 }
 func (p *sxCfg_serF) GetDownloadUlrPre() (r_pre string) {
-	r_pre = "http://" + p.Ip + ":" + p.Port + "/"
+	r_pre = "http://" + p.Ip + ":" + p.Port + "/download/"
 	return
 }
 type SxCfg_db struct{

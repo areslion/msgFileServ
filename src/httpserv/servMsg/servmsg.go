@@ -22,7 +22,12 @@ const (
 	cst_tsks_r = 0x0002 //客户端收到任务消息
 	cst_tsks_e = 0x0004 //客户端执行成功
 	cst_tsks_f = 0x0008 //客户端执行失败
+
+	cst_fix_desc = "Desc.json"
+	cst_prefix_getfil = "/msgfile/getfile"
 )
+
+var cst_tsksArr = [...]int{cst_tsks_u,cst_tsks_r,cst_tsks_e,cst_tsks_f}
 
 type sxReciever struct {
 	Guid string `json:"guid"`
@@ -43,7 +48,7 @@ type sxMsg struct {
 	Guid     string       `json:"guid"`
 	Tmx      string       `json:"tmx"`
 	Tmy      string       `json:"tmy"`
-	Tmexc    string       `json:"tmexc"`
+	Tmexc    string       `json:"tmexcok"`
 	Sender   string       `json:"sender"`
 	Os       int          `json:"os"`
 	Auto     int          `json:"auto"`
@@ -136,6 +141,28 @@ func getUsrMsg(t_id,t_page,t_limit,t_status string)(r_bts []byte){
 	return
 }
 
+func getOneTsk(t_msgid string)(r_bts []byte,b_ret bool){
+	path := m_cfg.ServFile.PathMsg + util.GetOSSeptor()+t_msgid+util.GetOSSeptor()+cst_fix_desc
+
+	bts,err := ioutil.ReadFile(path);if err!=nil {
+		util.L3E(fmt.Sprintf("getOneTsk ioutil.ReadFile %s failed %s",path,err.Error()))
+		return
+	}
+
+	var msgx sxMsg
+	err = json.Unmarshal(bts,&msgx);if err!=nil {
+		util.L3E(fmt.Sprintf("getOneTsk json.Unmarshal(bts,&sxMsg) ",path,err.Error()))
+		return
+	}
+
+	b_ret = true
+
+	util.L1T("%v",msgx)
+	r_bts = []byte(fmt.Sprintf("%v",msgx))
+	util.L2I("getOneTsk "+t_msgid+" OK")
+	return
+}
+
 func openx()(r_cnnt *sql.DB){
 	var bret bool
 	r_cnnt, bret = dbbase.Open(m_cfg)
@@ -162,6 +189,11 @@ func insertDBBytes(t_bts []byte)(r_id string,r_ret bool){
 	 }
 
 	r_id = msgx.Guid
+
+	for ix,_ := range msgx.Attach {
+		msgx.Attach[ix].Url = cst_prefix_getfil+"?"+"task="+msgx.Guid+"&file="+msgx.Attach[ix].Name
+		util.L2I(msgx.Attach[ix].Url)
+	}
 	r_ret = insertDB(msgx)
 	
 	 return
@@ -271,8 +303,9 @@ func saveDescMsg(t_msg *sxMsg)(r_ret bool){
 	folder := m_cfg.ServFile.PathMsg + t_msg.Guid + util.GetOSSeptor()
 	os.MkdirAll(folder,0711)
 
+	util.L1T(fmt.Sprintf("%v",t_msg))
 	bts,_ := json.Marshal(t_msg)
-	_,r_ret = util.SaveFileBytes(folder+"Desc.json",bts)
+	_,r_ret = util.SaveFileBytes(folder+cst_fix_desc,bts)
 	if r_ret==true {  util.L1T("saveDesc OK ") } else {
 		util.L1T("saveDesc KO ")
 	}
@@ -289,5 +322,48 @@ func saveDescBytes(t_id string,t_bts []byte)(r_ret bool){
 		util.L1T("saveDesc KO ")
 	}
 
+	return
+}
+
+func updateUsrTsk(t_tskid,t_usrid string,t_status int)(b_ret bool){
+	cnn := openx() ; if cnn == nil { return }
+	defer closex(cnn)
+
+
+	bvalid := false
+	for _,itm := range cst_tsksArr {
+		if itm == t_status {
+			bvalid = true
+			break
+		}
+	}
+	if bvalid == false { 
+		util.L3E("updateUsrTsk invalid status "+fmt.Sprintf("%d",t_status))
+		return
+	}
+
+	sqlcmd := "UPDATE msgSend SET statusx=? WHERE numMsg=? AND numReciever=? "
+	smt,err := cnn.Prepare(sqlcmd);if err!=nil {
+		util.L3E("updateUsrTsk cnn.Prepare() "+err.Error())
+		return
+	}
+
+	var res sql.Result
+	var affcted int64
+	res,err =smt.Exec(t_status,t_tskid,t_usrid);if err != nil {
+		util.L3E("updateUsrTsk smt.Exec "+err.Error())
+		return
+	}
+	affcted,err = res.RowsAffected();if err != nil {
+		util.L3E("updateUsrTsk res.RowsAffected() "+err.Error())
+		return
+	}
+	if affcted < 1 {
+		util.L3E(fmt.Sprintf("updateUsrTsk RowsAffected()=%d no relative record(dev=%s tsk=%s) find",affcted,t_usrid,t_tskid))
+		return
+	}
+
+	b_ret = true
+	util.L2I("updateUsrTsk OK dev="+t_usrid+" tsk="+t_tskid+" status="+fmt.Sprintf("%d  affcted=%d",t_status,affcted))
 	return
 }
