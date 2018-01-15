@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"time"
+	"os"
 	
 	_ "github.com/go-sql-driver/mysql"
 )
 import (
-	"os"
 	"dbbase"
 	"util"
 )
@@ -72,6 +72,52 @@ var m_cfg *util.SxCfgAll
 func closex(t_cnn *sql.DB){
 	if t_cnn!=nil {t_cnn.Close()}
 	dbbase.Close()
+}
+
+func delMsg(t_msgid string)(b_ret bool){
+	if(len(t_msgid)!=36) {
+		util.L3E("delMsg invalid msgid(%s=%d)",t_msgid,len(t_msgid))
+		return
+	}
+
+	util.L2I("delMsg start to delete msg "+t_msgid)
+	folder := m_cfg.ServFile.PathMsg + util.GetOSSeptor()+t_msgid
+	err := os.RemoveAll(folder);if err!=nil {
+		util.L3E("delMsg os.RemoveAll(%s) %s",folder,err.Error())
+		return
+	} else {
+		util.L2I("delMsg foler %s removed",folder)
+	}
+
+	cnn := openx();if cnn==nil {return}
+	defer closex(cnn)
+
+	cmdsql := "DELETE FROM msgAbstract WHERE numMsg=?"
+	smt,err :=cnn.Prepare(cmdsql)
+	if err!=nil {
+		util.L3E("delMsg cnn.Prepare(%s) %s",cmdsql,err.Error())
+		return
+	}
+	_,err = smt.Exec(t_msgid);if err!=nil {
+		util.L3E("delMsg smt.Exec(%s) %s",t_msgid,err.Error())
+		return
+	}
+	util.L2I("delMsg deleted form msgAbstract")
+
+	cmdsql = "DELETE FROM msgSend WHERE numMsg=?"
+	smt,err =cnn.Prepare(cmdsql)
+	if err!=nil {
+		util.L3E("delMsg cnn.Prepare(%s) %s",cmdsql,err.Error())
+		return
+	}
+	_,err = smt.Exec(t_msgid);if err!=nil {
+		util.L3E("delMsg smt.Exec(%s) %s",t_msgid,err.Error())
+		return
+	}
+	util.L2I("delMsg deleted form msgSend")
+	b_ret = true
+
+	return
 }
 
 func getUsrMsg(t_id,t_page,t_limit,t_status string)(r_bts []byte){

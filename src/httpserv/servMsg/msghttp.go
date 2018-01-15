@@ -26,6 +26,17 @@ func init(){
 	http.HandleFunc("/msgfile/usrupdate", usrupdate)//update one usr's one task status      
 	http.HandleFunc("/msgfile/gettsk", gettsk)//obtain one task's detail info
 	http.HandleFunc(cst_prefix_getfil, getfile)//download a file resourse
+
+	http.HandleFunc("/msgfile/delmsg", delmsgfile)//obtain one task's detail info
+}
+
+func delmsgfile(t_res http.ResponseWriter,t_ask *http.Request){
+	util.L2I("delmsgfile %s",t_ask.Method)
+
+	bret := false
+	tskid := t_ask.FormValue("task")
+	if t_ask.Method=="POST"{ bret = delMsg(tskid)}
+	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}
 }
 
 func gettsk(t_res http.ResponseWriter,t_ask *http.Request){
