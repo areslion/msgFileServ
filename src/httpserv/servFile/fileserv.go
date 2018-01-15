@@ -73,15 +73,9 @@ func delApp(t_res http.ResponseWriter, t_ask *http.Request) {
 }
 
 func downFileHandler(t_res http.ResponseWriter, t_ask *http.Request) {
-	log.Println("path:" + t_ask.URL.Path)
-
-	var sft software.SxSoft
-	folder, fldID, _ := util.GetPathEle(t_ask.URL.Path)
-	prefix := "/" + folder + "/"
-	sft.FolderID = fldID
-	util.L2I("start fileservr(" + prefix + " " + sft.GetFolderPath(software.CfgSft, false) + ")")
-	staticFServ := http.StripPrefix(prefix, http.FileServer(http.Dir(sft.GetFolderPath(software.CfgSft, false))))
-	staticFServ.ServeHTTP(t_res, t_ask)
+	util.L2I("downFileHandler %s",t_ask.Method)
+	
+	if t_ask.Method=="GET" {util.NewFileServ(t_ask,&t_res,software.CfgSft.ServFile.PathSft)}
 }
 
 func getlstApp(t_res http.ResponseWriter, t_ask *http.Request) {

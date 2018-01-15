@@ -24,7 +24,7 @@ const (
 	cst_tsks_f = 0x0008 //客户端执行失败
 
 	cst_fix_desc = "Desc.json"
-	cst_prefix_getfil = "/msgfile/getfile"
+	cst_prefix_getfil = "/msgfile/getfile/"
 )
 
 var cst_tsksArr = [...]int{cst_tsks_u,cst_tsks_r,cst_tsks_e,cst_tsks_f}
@@ -151,7 +151,7 @@ func getOneTsk(t_msgid string)(r_bts []byte,b_ret bool){
 
 	var msgx sxMsg
 	err = json.Unmarshal(bts,&msgx);if err!=nil {
-		util.L3E(fmt.Sprintf("getOneTsk json.Unmarshal(bts,&sxMsg) ",path,err.Error()))
+		util.L3E(fmt.Sprintf("getOneTsk json.Unmarshal(bts,&sxMsg) %s %s",path,err.Error()))
 		return
 	}
 
@@ -191,8 +191,8 @@ func insertDBBytes(t_bts []byte)(r_id string,r_ret bool){
 	r_id = msgx.Guid
 
 	for ix,_ := range msgx.Attach {
-		msgx.Attach[ix].Url = cst_prefix_getfil+"?"+"task="+msgx.Guid+"&file="+msgx.Attach[ix].Name
-		util.L2I(msgx.Attach[ix].Url)
+		msgx.Attach[ix].Url = cst_prefix_getfil+"/"+msgx.Guid+"/"+msgx.Attach[ix].Name
+		util.L2I("insertDBBytes Url=" + msgx.Attach[ix].Url)
 	}
 	r_ret = insertDB(msgx)
 	
@@ -251,6 +251,10 @@ func insertSender(t_cnn *sql.DB,t_msg *sxMsg) (b_ret bool) {
 	tmNow := time.Now().Format("2006-01-02 15:04:05")
 
 	for ix,item := range t_msg.Reciever{
+		if len(item.Guid) !=32 {
+			util.L3E("insertSender invalid receivere="+item.Guid)
+			continue
+		}
 		_, err = smt.Exec(px.Guid,item.Guid,tmNow,px.Tmx,px.Tmy,px.Name,px.Desc)
 		if err != nil {
 			util.L4F("saveNewSft  " + err.Error())

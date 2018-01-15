@@ -23,9 +23,9 @@ const (
 func init(){
 	http.HandleFunc("/msgfile/newmsg", newmsg)            //POST upload software
 	http.HandleFunc("/msgfile/usrget", usrget)            //POST upload software
-	http.HandleFunc("/msgfile/usrupdate", usrupdate)      
-	http.HandleFunc("/msgfile/gettsk", gettsk)
-	http.HandleFunc(cst_prefix_getfil, getfile)
+	http.HandleFunc("/msgfile/usrupdate", usrupdate)//update one usr's one task status      
+	http.HandleFunc("/msgfile/gettsk", gettsk)//obtain one task's detail info
+	http.HandleFunc(cst_prefix_getfil, getfile)//download a file resourse
 }
 
 func gettsk(t_res http.ResponseWriter,t_ask *http.Request){
@@ -43,17 +43,7 @@ func getfile(t_res http.ResponseWriter,t_ask *http.Request){
 	util.L2I("getfile called "+t_ask.Method)
 
 	if t_ask.Method=="GET" {
-		taskid := t_ask.FormValue("task")
-		filename := t_ask.FormValue("file")
-
-		util.L2I("%s %s",taskid,filename)
-
-		// folder, fldID, _ := util.GetPathEle(t_ask.URL.Path)
-		// prefix := "/" + folder + "/"
-		// sft.FolderID = fldID
-		// util.L2I("start fileservr(" + prefix + " " + sft.GetFolderPath(software.CfgSft, false) + ")")
-		// staticFServ := http.StripPrefix(prefix, http.FileServer(http.Dir(sft.GetFolderPath(software.CfgSft, false))))
-		// staticFServ.ServeHTTP(t_res, t_ask)
+		util.NewFileServ(t_ask,&t_res,m_cfg.ServFile.PathMsg)
 	}
 }
 
