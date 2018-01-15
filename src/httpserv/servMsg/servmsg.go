@@ -55,6 +55,9 @@ type sxMsg struct {
 	Popup    int          `json:"popupwindow"`
 	Desc     string       `json:"desc"`
 	Status	 int		  `json:"status"`
+	Numsend  int          `json:"numSend"`
+	NumOK	 int          `json:"numOK"`
+	NumKO    int          `json:"numKO"`
 	Reciever []sxReciever `json:"reciever"`
 	Attach   []sxAttatche `json:"attachement"`
 	Exctm    []sxExctm    `json:"tmExc"`
@@ -120,7 +123,49 @@ func delMsg(t_msgid string)(b_ret bool){
 	return
 }
 
-func getUsrMsg(t_id,t_page,t_limit,t_status string)(r_bts []byte){
+func getAdminMsg(t_page,t_limit string)(r_bts []byte,b_ret bool){
+	cnn := openx();if cnn==nil {return}
+	defer closex(cnn)
+	
+
+	sqlcmd := "SELECT (SELECT COUNT(*) FROM msgAbstract)num,namex,tmx,tmy,numSent,numSentOK,numSentKO "
+	sqlcmd += "FROM msgAbstract "
+	sqlcmd += "LIMIT ?,? "
+
+	util.L2I(sqlcmd)
+	smt,err := cnn.Prepare(sqlcmd);if err!=nil {
+		util.L3E("getAdminMsg Prepare "+err.Error())
+	}
+	rows,err := smt.Query(t_page,t_limit); if err !=nil {
+		util.L3E("getAdminMsg smt.Query "+err.Error())
+		return
+	}
+
+
+	var resMsg sxMsgAskRes
+	resMsg.Page,_ = strconv.Atoi(t_page)
+	resMsg.Limit,_ = strconv.Atoi(t_limit)
+
+	for rows.Next() {
+		var ele sxMsg
+		rows.Scan(&resMsg.Totalnum,&ele.Name,&ele.Tmx,&ele.Tmy,&ele.Numsend,&ele.NumOK,&ele.NumKO)
+		resMsg.Lst = append(resMsg.Lst,ele)
+
+		util.L2I(fmt.Sprintf("%v",ele))
+	}
+	bts,err := json.Marshal(resMsg); if err !=nil {
+		util.L3E("getAdminMsg json.Marshal(resMsg)"+err.Error())
+		return
+	}
+	r_bts = bts
+
+	b_ret = true
+	util.L2I("getAdminMsg "+"("+fmt.Sprintf("toatl=%d  %d/(Limit %d %d) %d",resMsg.Totalnum,resMsg.Page,resMsg.Page,resMsg.Limit,len(resMsg.Lst))+")")
+
+	return
+}
+
+func getUsrMsg(t_id,t_page,t_limit,t_status string)(r_bts []byte,b_ret bool){
 	cnn := openx();if cnn==nil {return}
 	defer closex(cnn)
 	
@@ -182,6 +227,7 @@ func getUsrMsg(t_id,t_page,t_limit,t_status string)(r_bts []byte){
 	}
 	r_bts = bts
 
+	b_ret = true
 	util.L2I("getUsrMsg "+t_id+"("+fmt.Sprintf("toatl=%d  %d/(Limit %d %d) %d",resMsg.Totalnum,resMsg.Page,resMsg.Page,resMsg.Limit,len(resMsg.Lst))+")")
 
 	return
@@ -263,8 +309,8 @@ func insertDB(t_msg *sxMsg)(r_ret bool){
 }
 //Insert message into database
 func insertAbstract(t_cnn *sql.DB,t_msg *sxMsg) (b_ret bool) {
-	sqlcmd := "REPLACE INTO msgAbstract (numMsg,namex,tmx,tmy,tmm,os,autoexe,popup,numSender)"
-	sqlcmd += "VALUE(?,?,?,?,?,?,?,?,?)"
+	sqlcmd := "REPLACE INTO msgAbstract (numMsg,namex,tmx,tmy,tmm,os,autoexe,popup,numSender,numSent,descx)"
+	sqlcmd += "VALUE(?,?,?,?,?,?,?,?,?,?,?)"
 	smt, err := t_cnn.Prepare(sqlcmd)
 	if err != nil {
 		util.L3E("insertAbstract fail to Prepare " + err.Error())
@@ -273,7 +319,7 @@ func insertAbstract(t_cnn *sql.DB,t_msg *sxMsg) (b_ret bool) {
 
 	var px *sxMsg = t_msg
 	tmNow := time.Now().Format("2006-01-02 15:04:05")
-	_, err = smt.Exec(px.Guid, px.Name, px.Tmx, px.Tmy, tmNow, px.Os, px.Auto, px.Popup, px.Sender)
+	_, err = smt.Exec(px.Guid, px.Name, px.Tmx, px.Tmy, tmNow, px.Os, px.Auto, px.Popup, px.Sender,len(px.Reciever),px.Desc)
 	if err != nil {
 		util.L4F("insertAbstract " + err.Error())
 		return

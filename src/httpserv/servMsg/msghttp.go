@@ -21,8 +21,9 @@ const (
 )
 
 func init(){
-	http.HandleFunc("/msgfile/newmsg", newmsg)            //POST upload software
-	http.HandleFunc("/msgfile/usrget", usrget)            //POST upload software
+	http.HandleFunc("/msgfile/newmsg", newmsg)//POST upload software
+	http.HandleFunc("/msgfile/usrget", usrget)//GET one usr's message task list
+	http.HandleFunc("/msgfile/admget", admget)//GET administrator's message task list
 	http.HandleFunc("/msgfile/usrupdate", usrupdate)//update one usr's one task status      
 	http.HandleFunc("/msgfile/gettsk", gettsk)//obtain one task's detail info
 	http.HandleFunc(cst_prefix_getfil, getfile)//download a file resourse
@@ -30,8 +31,24 @@ func init(){
 	http.HandleFunc("/msgfile/delmsg", delmsgfile)//obtain one task's detail info
 }
 
+func admget(t_res http.ResponseWriter,t_ask *http.Request){
+	util.L2I("admget %s",t_ask.Method)
+
+	bret := false
+	if t_ask.Method == "GET" {
+		npage := t_ask.FormValue("page")
+		nlimt := t_ask.FormValue("limit")
+
+		var bts []byte
+		bts ,bret= getAdminMsg(npage,nlimt)
+		t_res.Header().Set("Content-Type", "application/json; charset=utf-8")
+		t_res.Write(bts)
+	}
+	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}
+}
+
 func delmsgfile(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I("delmsgfile %s",t_ask.Method)
+	util.L2I("delmsgfile %s %s",t_ask.Method,t_ask.URL.Path)
 
 	bret := false
 	tskid := t_ask.FormValue("task")
@@ -42,12 +59,16 @@ func delmsgfile(t_res http.ResponseWriter,t_ask *http.Request){
 func gettsk(t_res http.ResponseWriter,t_ask *http.Request){
 	util.L2I("gettsk called "+t_ask.Method)
 
+	bret := false
 	if t_ask.Method =="GET"{
 		tskid := t_ask.FormValue("task")
-		bts,_ := getOneTsk(tskid)
+
+		var bts []byte
+		bts,bret = getOneTsk(tskid)
 		t_res.Header().Set("Content-Type",cst_json)
 		t_res.Write(bts)
 	}
+	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}
 }
 
 func getfile(t_res http.ResponseWriter,t_ask *http.Request){
@@ -60,9 +81,11 @@ func getfile(t_res http.ResponseWriter,t_ask *http.Request){
 
 func newmsg(t_res http.ResponseWriter, t_ask *http.Request) {
 	util.L2I("/msgfile/newmsg called "+t_ask.Method)
+	bret := false
 	if t_ask.Method =="POST" {
-		parseAsk(t_ask)
+		bret = parseAsk(t_ask)
 	}	
+	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}
 }
 
 
@@ -105,7 +128,8 @@ func parseAsk(t_ask *http.Request) (r_ret bool) {
 		for _,itm := range attx {
 			if itm.bvalid==false { break }
 
-			saveAttach(itm.name,msgid,itm.buf.Bytes())
+			bsaves := saveAttach(itm.name,msgid,itm.buf.Bytes())
+			bfileSave = bfileSave||bsaves
 		}
 	}
 
@@ -115,16 +139,19 @@ func parseAsk(t_ask *http.Request) (r_ret bool) {
 func usrget(t_res http.ResponseWriter,t_ask *http.Request){
 	util.L2I(t_ask.Method)
 
+	bret := false
 	if t_ask.Method == "GET" {
 		idx := t_ask.FormValue("id")
 		npage := t_ask.FormValue("page")
 		nlimt := t_ask.FormValue("limit")
 		nstatu := t_ask.FormValue("status")
 
-		bts := getUsrMsg(idx,npage,nlimt,nstatu)
+		var bts []byte
+		bts ,bret= getUsrMsg(idx,npage,nlimt,nstatu)
 		t_res.Header().Set("Content-Type", "application/json; charset=utf-8")
 		t_res.Write(bts)
 	}
+	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}
 
 
 
@@ -144,12 +171,15 @@ func usrget(t_res http.ResponseWriter,t_ask *http.Request){
 
 func usrupdate(t_res http.ResponseWriter,t_ask *http.Request){
 	util.L2I("usrupdate "+t_ask.Method)
+
+	bret := false
 	if t_ask.Method == "POST" {
 		tsk := t_ask.FormValue("tsk")
 		dev := t_ask.FormValue("dev")
 		statux,_ := strconv.Atoi(t_ask.FormValue("status"))
 
-		updateUsrTsk(tsk,dev,statux)
+		bret = updateUsrTsk(tsk,dev,statux)
 	}
+	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}
 }
 
