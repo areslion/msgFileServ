@@ -26,6 +26,7 @@ func init(){
 	http.HandleFunc("/msgfile/admget", admget)//GET administrator's message task list
 	http.HandleFunc("/msgfile/usrupdate", usrupdate)//update one usr's one task status      
 	http.HandleFunc("/msgfile/gettsk", gettsk)//obtain one task's detail info
+	http.HandleFunc("/msgfile/tsksendlst", getsendlst)//obtain one task's detail info
 	http.HandleFunc(cst_prefix_getfil, getfile)//download a file resourse
 
 	http.HandleFunc("/msgfile/delmsg", delmsgfile)//obtain one task's detail info
@@ -36,11 +37,14 @@ func admget(t_res http.ResponseWriter,t_ask *http.Request){
 
 	bret := false
 	if t_ask.Method == "GET" {
-		npage := t_ask.FormValue("page")
-		nlimt := t_ask.FormValue("limit")
+		strpage := t_ask.FormValue("page")
+		strlimt := t_ask.FormValue("limit")
+		// npage,_ := strconv.Atoi(strpage)
+		// nlimit,_ := strconv.Atoi(strlimt)
+		// npage = npage*nlimit
 
 		var bts []byte
-		bts ,bret= getAdminMsg(npage,nlimt)
+		bts ,bret= getAdminMsg(strpage,strlimt)
 		t_res.Header().Set("Content-Type", "application/json; charset=utf-8")
 		t_res.Write(bts)
 	}
@@ -64,11 +68,39 @@ func gettsk(t_res http.ResponseWriter,t_ask *http.Request){
 		tskid := t_ask.FormValue("task")
 
 		var bts []byte
-		bts,bret = getOneTsk(tskid)
+		bts,bret = getOneTskDetail(tskid)
 		t_res.Header().Set("Content-Type",cst_json)
 		t_res.Write(bts)
 	}
 	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}
+}
+
+
+func getsendlst(t_res http.ResponseWriter,t_ask *http.Request){
+	util.L2I("getsendlst called "+t_ask.Method)
+
+	bret := false
+	if t_ask.Method =="GET"{
+		tskid := t_ask.FormValue("task");if len(tskid)!=36 {
+			util.L3E("getsendlst invalid task guid %s",tskid)
+			return
+		}
+		page ,err:= strconv.Atoi(t_ask.FormValue("page"));if err!=nil{
+			util.L3E("getsendlst strconv.Atoi(page) %s",err.Error())
+			return
+		}
+		limit,err := strconv.Atoi(t_ask.FormValue("limit"));if err!=nil{
+			util.L3E("getsendlst strconv.Atoi(limit)",err.Error())
+			return
+		}
+
+		var bts []byte
+		bts,bret = getOneTskSendDetail(tskid,page,limit)
+		t_res.Header().Set("Content-Type",cst_json)
+		t_res.Write(bts)
+	}
+
+	defer func (){if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}}()
 }
 
 func getfile(t_res http.ResponseWriter,t_ask *http.Request){
