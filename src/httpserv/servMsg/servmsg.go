@@ -101,7 +101,7 @@ func closex(t_cnn *sql.DB) {
 	if t_cnn != nil {
 		t_cnn.Close()
 	}
-	dbbase.Close()
+	dbbase.Close(t_cnn)
 }
 
 func delMsg(t_msgid string) (b_ret bool) {
@@ -400,8 +400,7 @@ func insertDB(t_msg *sxMsg) (r_ret bool) {
 	if r_ret == false {
 		return
 	}
-	defer dbbase.Close()
-	defer cnt.Close()
+	defer dbbase.Close(cnt)
 
 	r_ret = insertAbstract(cnt, t_msg)
 	if r_ret == false {

@@ -130,8 +130,7 @@ func InsertDB(sft *SxSoft, cfg *util.SxCfgAll) (r_folderId string, b_ret bool) {
 	if bret == false {
 		return "", false
 	}
-	defer dbbase.Close()
-	defer cnt.Close()
+	defer dbbase.Close(cnt)
 
 	sft.FolderID = getFolderID(cnt, sft.Namexf)
 	sft.SetUlrF(CfgSft, sft.Namexf)
@@ -190,8 +189,7 @@ func GetSft(t_name string) (r_sft *SxSoft, r_folderid string, b_ret bool) {
 	if bret == false {
 		return nil, "", false
 	}
-	defer dbbase.Close()
-	defer cnt.Close()
+	defer dbbase.Close(cnt)
 
 	smt, err := cnt.Prepare(sqlcmd)
 	if err != nil {
@@ -221,8 +219,7 @@ func DelSft(t_sft *SxSoft) bool {
 	if bret == false {
 		return false
 	}
-	defer dbbase.Close()
-	defer cnt.Close()
+	defer dbbase.Close(cnt)
 
 	sqlcmd := "DELETE FROM depotSft WHERE namexa = ? "
 	smt, err := cnt.Prepare(sqlcmd)
@@ -248,8 +245,7 @@ func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
 		util.L4F("GetSftLst  fail to open db " + M_dbCfg.Db.GetCntStr())
 		return nil, "", false
 	}
-	defer dbbase.Close()
-	defer cnt.Close()
+	defer dbbase.Close(cnt)
 
 	smt, err := cnt.Prepare(sqlcmd)
 	if err != nil {
