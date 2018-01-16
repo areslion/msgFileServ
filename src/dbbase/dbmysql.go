@@ -17,6 +17,67 @@ type SCfg struct {
 	charset  string
 }
 
+type SxDB struct{
+	Cnn *sql.DB
+	Rows *sql.Rows
+	Smt *sql.Stmt
+	Res sql.Result
+	Cfg *util.SxCfg_db
+	Sqlcmd string
+}
+func (p *SxDB)Close(){
+	p.CloseRes()
+	p.Cnn.Close()
+}
+func (p *SxDB)CloseRes(){
+	p.Rows.Close()
+	p.Smt.Close()
+}
+func NewSxDB(t_cfg *util.SxCfg_db)(r_new *SxDB){
+	return &SxDB{Cfg:t_cfg}
+}
+func (p *SxDB)Open()(b_ret bool){
+	var err error
+	p.Cnn, err = sql.Open("mysql", p.Cfg.GetCntStr())
+	if err != nil {
+		util.L4F("SxDB Fail to open db " + err.Error() + " " + p.Cfg.GetCntStr())
+		return
+	}
+	b_ret = true
+	return
+}
+func (p *SxDB)Query(args ...interface{})(b_ret bool){
+	var err error
+	p.Rows,err = p.Smt.Query(args);if err!=nil {
+		util.L4F("SxDB Fail to Query(args) "+err.Error())
+		return
+	}
+
+	b_ret = true
+	return
+}
+func (p *SxDB)Exc(args ...interface{})(b_ret bool){
+	var err error
+	p.Res,err = p.Smt.Exec(args);if err!=nil {
+		util.L4F("SxDB Fail to Query(args) "+err.Error())
+		return
+	}
+
+	b_ret = true
+	return
+}
+func (p *SxDB)PrePare()(b_ret bool){
+	p.CloseRes()
+
+	var err error
+	p.Smt,err = p.Cnn.Prepare(p.Sqlcmd);if err!=nil{
+		util.L4F("SxDB Fail to Prepare(%s) %s",p.Sqlcmd,err.Error())
+		return
+	}
+	b_ret = true
+	return
+}
+
 func (p *SCfg) Init(t_ip, t_usr, t_pwd, t_db, t_cset string) {
 	p.hostIP = t_ip
 	p.usrname = t_usr

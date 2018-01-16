@@ -19,6 +19,7 @@ type sxAttEle struct{
 const (
 	cst_json = "application/json; charset=utf-8"
 )
+var numCallTst int =0
 
 func init(){
 	http.HandleFunc("/msgfile/newmsg", newmsg)//POST upload software
@@ -77,30 +78,35 @@ func gettsk(t_res http.ResponseWriter,t_ask *http.Request){
 
 
 func getsendlst(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I("getsendlst called "+t_ask.Method)
+	numCallTst++
+	util.L2I("getsendlst called %s %d",t_ask.Method,numCallTst)
 
 	bret := false
 	if t_ask.Method =="GET"{
 		tskid := t_ask.FormValue("task");if len(tskid)!=36 {
 			util.L3E("getsendlst invalid task guid %s",tskid)
+			t_res.WriteHeader(http.StatusNotAcceptable)
 			return
 		}
 		page ,err:= strconv.Atoi(t_ask.FormValue("page"));if err!=nil{
 			util.L3E("getsendlst strconv.Atoi(page) %s",err.Error())
+			t_res.WriteHeader(http.StatusNotAcceptable)
 			return
 		}
 		limit,err := strconv.Atoi(t_ask.FormValue("limit"));if err!=nil{
 			util.L3E("getsendlst strconv.Atoi(limit)",err.Error())
+			t_res.WriteHeader(http.StatusNotAcceptable)
 			return
 		}
 
 		var bts []byte
-		bts,bret = getOneTskSendDetail(tskid,page,limit)
-		t_res.Header().Set("Content-Type",cst_json)
-		t_res.Write(bts)
+		bts,bret = getOneTskSendDetail(tskid,page,limit);if bret {
+			t_res.Header().Set("Content-Type",cst_json)
+			t_res.Write(bts)
+		}
 	}
 
-	defer func (){if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}}()
+	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}
 }
 
 func getfile(t_res http.ResponseWriter,t_ask *http.Request){

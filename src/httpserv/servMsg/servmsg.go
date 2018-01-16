@@ -174,6 +174,7 @@ func getAdminMsg(t_page, t_limit string) (r_bts []byte, b_ret bool) {
 	if err != nil {
 		util.L3E("getAdminMsg Prepare " + err.Error())
 	}
+	defer smt.Close()
 	rows, err := smt.Query(npage*nlimit, t_limit)
 	if err != nil {
 		util.L3E("getAdminMsg smt.Query " + err.Error())
@@ -324,6 +325,7 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 		util.L3E("getOneTskSendDetail cnn.Prepare(%s) %s",sqlcmd,err.Error())
 		return
 	}
+
 	rows,err = smt.Query(t_tsk);if err!=nil{
 		util.L3E("getOneTskSendDetail smt.Query(%s) %s",t_tsk,err.Error())
 		return
@@ -334,6 +336,8 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 	}
 
 
+	rows.Close()
+	smt.Close()
 	sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE numMsg=?)num,numReciever,statusx,tmExc FROM msgSend WHERE numMsg=? limit ?,?" 
 	smt,err= cnn.Prepare(sqlcmd); if err!=nil {
 		util.L3E("getOneTskSendDetail cnn.Prepare(%s) %s",sqlcmd,err.Error())
@@ -354,6 +358,9 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 		return
 	}
 
+
+	rows.Close()
+	smt.Close()
 	b_ret = true
 	util.L2I("getOneTskSendDetail (page%d/%d res=%d/%d)",t_page,t_limit,sdx.NAll,sdx.Totalnum)
 	return
