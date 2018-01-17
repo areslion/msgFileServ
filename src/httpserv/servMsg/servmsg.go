@@ -175,17 +175,10 @@ func getAdminMsg(t_page, t_limit string) (r_bts []byte, b_ret bool) {
 }
 
 func getUsrMsg(t_id, t_page, t_limit, t_status string) (r_bts []byte, b_ret bool) {
-	cnn := openx()
-	if cnn == nil {
-		return
-	}
-	defer closex(cnn)
+	dbopt,bret:=dbbase.NewSxDB(&m_cfg.Db,"getUsrMsg") ; if !bret {return}
+	defer dbopt.Close()
 
-	nstatus, err := strconv.Atoi(t_status)
-	if err != nil {
-		util.L3E("getUsrMsg strconv.Atoi(t_status) " + err.Error())
-		return
-	}
+	nstatus, _:= strconv.Atoi(t_status)
 	npage,_:=strconv.Atoi(t_page)
 	nlimit,_:=strconv.Atoi(t_limit)
 
@@ -210,35 +203,25 @@ func getUsrMsg(t_id, t_page, t_limit, t_status string) (r_bts []byte, b_ret bool
 		strFlag = "numReciever=" + "'" + t_id + "'"
 	}
 
-	sqlcmd := "SELECT (SELECT COUNT(*) FROM msgSend WHERE " + strFlag + ")num,namex,statusx,tmx,tmy,tmExc,descx "
-	sqlcmd += "FROM msgSend "
-	sqlcmd += "WHERE " + strFlag
-	sqlcmd += "LIMIT ?,? "
+	dbopt.Sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE " + strFlag + ")num,namex,statusx,tmx,tmy,tmExc,descx "
+	dbopt.Sqlcmd += "FROM msgSend "
+	dbopt.Sqlcmd += "WHERE " + strFlag
+	dbopt.Sqlcmd += "LIMIT ?,? "
 
-	util.L2I(sqlcmd)
-	smt, err := cnn.Prepare(sqlcmd)
-	if err != nil {
-		util.L3E("getUsrMsg Prepare " + err.Error())
-	}
-	rows, err := smt.Query(npage*nlimit, t_limit)
-	if err != nil {
-		util.L3E("getUsrMsg smt.Query " + err.Error())
-		return
-	}
+	util.L1T(dbopt.Sqlcmd)
+	if !dbopt.Query(npage*nlimit, t_limit){return}
 
 	var resMsg sxMsgAskRes
-	resMsg.Page, _ = strconv.Atoi(t_page)
-	resMsg.Limit, _ = strconv.Atoi(t_limit)
+	resMsg.Page = npage
+	resMsg.Limit = nlimit
 	resMsg.UsrID = t_id
 
-	for rows.Next() {
+	for dbopt.Rows.Next() {
 		var ele sxMsg
-		rows.Scan(&resMsg.Totalnum, &ele.Name, &ele.Status, &ele.Tmx, &ele.Tmy, &ele.Tmexc, &ele.Desc)
+		dbopt.Rows.Scan(&resMsg.Totalnum, &ele.Name, &ele.Status, &ele.Tmx, &ele.Tmy, &ele.Tmexc, &ele.Desc)
 		resMsg.Lst = append(resMsg.Lst, ele)
 
-		util.L2I(fmt.Sprintf("%v", ele))
-		//if rows.Next()==false {break}
-		//util.L2I(fmt.Sprintf("%v",resMsg.Lst))
+		util.L1T(fmt.Sprintf("%v", ele))
 	}
 	bts, err := json.Marshal(resMsg)
 	if err != nil {
@@ -248,7 +231,7 @@ func getUsrMsg(t_id, t_page, t_limit, t_status string) (r_bts []byte, b_ret bool
 	r_bts = bts
 
 	b_ret = true
-	util.L2I("getUsrMsg " + t_id + "(" + fmt.Sprintf("toatl=%d  %d/(Limit %d %d) %d", resMsg.Totalnum, resMsg.Page, resMsg.Page, resMsg.Limit, len(resMsg.Lst)) + ")")
+	util.L2I("getUsrMsg %s(toatl=%d  %d/(Limit %d %d) %d",t_id,resMsg.Totalnum, resMsg.Page, resMsg.Page, resMsg.Limit, len(resMsg.Lst))
 
 	return
 }
