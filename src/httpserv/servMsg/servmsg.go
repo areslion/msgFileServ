@@ -97,12 +97,6 @@ type (
 
 var m_cfg *util.SxCfgAll
 
-func closex(t_cnn *sql.DB) {
-	if t_cnn != nil {
-		t_cnn.Close()
-	}
-	dbbase.Close(t_cnn)
-}
 
 func delMsg(t_msgid string) (b_ret bool) {
 	if len(t_msgid) != 36 {
@@ -295,15 +289,6 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 	return
 }
 
-func openx() (r_cnnt *sql.DB) {
-	var bret bool
-	r_cnnt, bret = dbbase.Open(m_cfg)
-	if bret == false {
-		r_cnnt = nil
-		return
-	}
-	return
-}
 
 func StartServMsg(t_cfg *util.SxCfgAll) {
 	m_cfg = t_cfg
