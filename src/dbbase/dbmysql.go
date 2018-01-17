@@ -51,7 +51,7 @@ func (p *sxDB) closeRes() {
 }
 func (p *sxDB) Exc(args ...interface{}) (b_ret bool) {
 	var err error
-	if !p.prePare() {
+	if !p.PrePare() {
 		return
 	}
 
@@ -64,6 +64,18 @@ func (p *sxDB) Exc(args ...interface{}) (b_ret bool) {
 	b_ret = true
 	return
 }
+func (p *sxDB) ExcAlone(args ...interface{}) (b_ret bool) {
+	var err error
+	p.res, err = p.smt.Exec(args...)
+	if err != nil {
+		p.logF("Exc Fail to Query(args) " + err.Error())
+		return
+	}
+
+	b_ret = true
+	return
+}
+
 func (p *sxDB) open() (b_ret bool) {
 	var err error
 	p.cnn, err = sql.Open("mysql", p.cfg.GetCntStr())
@@ -76,7 +88,7 @@ func (p *sxDB) open() (b_ret bool) {
 }
 func (p *sxDB) Query(args ...interface{}) (b_ret bool) {
 	var err error
-	if !p.prePare() {
+	if !p.PrePare() {
 		return
 	}
 
@@ -89,7 +101,7 @@ func (p *sxDB) Query(args ...interface{}) (b_ret bool) {
 	b_ret = true
 	return
 }
-func (p *sxDB) prePare() (b_ret bool) {
+func (p *sxDB) PrePare() (b_ret bool) {
 	p.closeRes()
 
 	var err error

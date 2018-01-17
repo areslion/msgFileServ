@@ -323,11 +323,11 @@ func insertDB(t_msg *sxMsg) (r_ret bool) {
 	}
 	defer dbbase.Close(cnt)
 
-	r_ret = insertAbstract(cnt, t_msg)
+	r_ret = insertAbstract(t_msg)
 	if r_ret == false {
 		return
 	}
-	r_ret = insertSender(cnt, t_msg)
+	r_ret = insertSender(t_msg)
 	if r_ret == false {
 		return
 	}
@@ -340,56 +340,42 @@ func insertDB(t_msg *sxMsg) (r_ret bool) {
 }
 
 //Insert message into database
-func insertAbstract(t_cnn *sql.DB, t_msg *sxMsg) (b_ret bool) {
-	sqlcmd := "REPLACE INTO msgAbstract (numMsg,namex,tmx,tmy,tmm,os,autoexe,popup,numSender,numSent,descx)"
-	sqlcmd += "VALUE(?,?,?,?,?,?,?,?,?,?,?)"
-	smt, err := t_cnn.Prepare(sqlcmd)
-	if err != nil {
-		util.L3E("insertAbstract fail to Prepare " + err.Error())
-		return
-	}
+func insertAbstract(t_msg *sxMsg) (b_ret bool) {
+	dbopt,bret := dbbase.NewSxDB(&m_cfg.Db,"insertAbstract") ; if !bret {return}
+	defer dbopt.Close()
 
 	var px *sxMsg = t_msg
 	tmNow := time.Now().Format("2006-01-02 15:04:05")
-	_, err = smt.Exec(px.Guid, px.Name, px.Tmx, px.Tmy, tmNow, px.Os, px.Auto, px.Popup, px.Sender, len(px.Reciever), px.Desc)
-	if err != nil {
-		util.L4F("insertAbstract " + err.Error())
-		return
-	}
+	dbopt.Sqlcmd = "REPLACE INTO msgAbstract (numMsg,namex,tmx,tmy,tmm,os,autoexe,popup,numSender,numSent,descx)"
+	dbopt.Sqlcmd += "VALUE(?,?,?,?,?,?,?,?,?,?,?)"
+	if !dbopt.Exc(px.Guid, px.Name, px.Tmx, px.Tmy, tmNow, px.Os, px.Auto, px.Popup, px.Sender, len(px.Reciever), px.Desc){return}
 
 	b_ret = true
-	util.L2I("insertAbstract add a msg task " + t_msg.Guid + " " + t_msg.Name)
+	util.L2I("insertAbstract add a msg task %s %s",t_msg.Guid,t_msg.Name)
 	return
 }
 
-func insertSender(t_cnn *sql.DB, t_msg *sxMsg) (b_ret bool) {
-	sqlcmd := "REPLACE INTO msgSend (numMsg,numReciever,tmm,tmx,tmy,namex,descx)"
-	sqlcmd += "VALUE(?,?,?,?,?,?,?)"
-	smt, err := t_cnn.Prepare(sqlcmd)
-	if err != nil {
-		util.L3E("insertSender  fail to Prepare " + err.Error())
-		return
-	}
+func insertSender(t_msg *sxMsg) (b_ret bool) {
+	dbopt,bret := dbbase.NewSxDB(&m_cfg.Db,"insertSender"); if !bret {return}
+	defer dbopt.Close()
 
 	var px *sxMsg = t_msg
 	tmNow := time.Now().Format("2006-01-02 15:04:05")
+	dbopt.Sqlcmd = "REPLACE INTO msgSend (numMsg,numReciever,tmm,tmx,tmy,namex,descx)"
+	dbopt.Sqlcmd += "VALUE(?,?,?,?,?,?,?)"
+	if !dbopt.PrePare() {return}
 
 	for ix, item := range t_msg.Reciever {
 		if len(item.Guid) != 32 {
 			util.L3E("insertSender invalid receivere=" + item.Guid)
 			continue
 		}
-		_, err = smt.Exec(px.Guid, item.Guid, tmNow, px.Tmx, px.Tmy, px.Name, px.Desc)
-		if err != nil {
-			util.L4F("saveNewSft  " + err.Error())
-			return
-		} else {
-			util.L1T("add a task to a user " + fmt.Sprintf("%v  %d", item, ix))
-		}
+		if !dbopt.ExcAlone(px.Guid, item.Guid, tmNow, px.Tmx, px.Tmy, px.Name, px.Desc) {return}
+		util.L1T("add a task to a user %d %d %v", ix,dbopt.Affected(),item )
 	}
 
 	b_ret = true
-	util.L2I("insertSender add a msg " + t_msg.Guid + " " + t_msg.Name + " to usr=" + fmt.Sprintf("%d", len(px.Reciever)))
+	util.L2I("insertSender add a msg %s %s to usr=%d",t_msg.Guid,t_msg.Name, len(px.Reciever))
 	return
 }
 
