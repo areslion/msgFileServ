@@ -3,7 +3,6 @@ package software
 import (
 	"bytes"
 	"container/list"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -126,147 +125,86 @@ func init() {
 }
 
 func InsertDB(sft *SxSoft, cfg *util.SxCfgAll) (r_folderId string, b_ret bool) {
-	cnt, bret := dbbase.Open(cfg)
-	if bret == false {
-		return "", false
-	}
-	defer dbbase.Close(cnt)
+	dbopt,bret := dbbase.NewSxDB(&cfg.Db,""); if !bret {return}
+	defer dbopt.Close()
 
-	sft.FolderID = getFolderID(cnt, sft.Namexf)
+	sft.FolderID,bret = getFolderID(sft.Namexf); if !bret {return}
 	sft.SetUlrF(CfgSft, sft.Namexf)
-	sqlcmd := "REPLACE INTO depotSft(namexf,namexa,ver,pathx,pathIcon,flagSft,md5x,folderId,descx) "
-	sqlcmd += "VALUES(?,?,?,?,?,?,?,?,?)"
-	smt, err := cnt.Prepare(sqlcmd)
-	if err != nil {
-		util.L3E("InsertDB  fail to Prepare " + err.Error())
-		return "", false
-	}
+	r_folderId = sft.FolderID
+	dbopt.Sqlcmd = "REPLACE INTO depotSft(namexf,namexa,ver,pathx,pathIcon,flagSft,md5x,folderId,descx) "
+	dbopt.Sqlcmd += "VALUES(?,?,?,?,?,?,?,?,?)"
 
-	_, err = smt.Exec(sft.Namexf, sft.Namexa, sft.Ver, sft.Pathx, sft.PathIcon, sft.FlgSft, sft.Md5x, sft.FolderID, sft.Desc)
-	if err != nil {
-		util.L4F("saveNewSft  " + err.Error())
-		return "", false
-	}
+	if !dbopt.Exc(sft.Namexf, sft.Namexa, sft.Ver, sft.Pathx, sft.PathIcon, sft.FlgSft, sft.Md5x, sft.FolderID, sft.Desc){return}
 
-	return sft.FolderID, true
+	b_ret = true
+	return
 }
 
-func getFolderID(t_db *sql.DB, t_fileNmae string) (r_id string) {
-	var folderid string
-	sqlcmd := "SELECT folderId FROM depotSft WHERE namexf = ?"
-	//sqlcmd += strx(t_fileNmae)
+func getFolderID(t_fileNmae string) (r_id string,b_ret bool) {
+	dbopt,bret := dbbase.NewSxDB(&M_dbCfg.Db,"getFolderID"); if !bret {return}
+	defer dbopt.Close()
 
-	smt, err := t_db.Prepare(sqlcmd)
-	if err != nil {
-		util.L4F("getFolderID  fail to Prepare " + err.Error())
-		var folderid string
-		return folderid
-	}
+	dbopt.Sqlcmd = "SELECT folderId FROM depotSft WHERE namexf = ?"
+	if !dbopt.Query(t_fileNmae) {return}
 
-	rows, err := smt.Query(t_fileNmae)
-	if err != nil {
-		util.L4F("getFolderID  " + err.Error())
-		return util.Guid()
-	}
-
-	if rows.Next() {
-		rows.Scan(&folderid)
+	if dbopt.Rows.Next() {
+		dbopt.Rows.Scan(&r_id)
 	} else {
-		folderid = util.Guid()
+		r_id = util.Guid()
 	}
 
-	return folderid
+	b_ret = true
+	return
 }
 
 func GetSft(t_name string) (r_sft *SxSoft, r_folderid string, b_ret bool) {
-	var folderid string
-	sft := new(SxSoft)
-	sqlcmd := "SELECT namexf,namexa,ver,pathx,pathIcon,flagSft,md5x,folderId "
-	sqlcmd += "FROM depotSft "
-	sqlcmd += "WHERE namexa = ? "
+	dbopt,bret := dbbase.NewSxDB(&M_dbCfg.Db,"GetSft");if !bret {return}
+	defer dbopt.Close()
 
-	cnt, bret := dbbase.Open(util.GetSftCfg())
-	if bret == false {
-		return nil, "", false
-	}
-	defer dbbase.Close(cnt)
-
-	smt, err := cnt.Prepare(sqlcmd)
-	if err != nil {
-		util.L4F("GetSft  fail to Prepare " + err.Error())
-		return nil, "", false
-	}
-
-	rows, err := smt.Query(t_name)
-	if err != nil {
-		util.L4F("GetSft  " + err.Error())
-		return nil, "", false
-	}
-
-	if rows.Next() {
-		rows.Scan(&sft.Namexf, &sft.Namexa, &sft.Ver, &sft.Pathx, &sft.PathIcon, &sft.FlgSft, &sft.Md5x, &sft.FolderID)
-		folderid = sft.FolderID
+	r_sft = new(SxSoft)
+	dbopt.Sqlcmd = "SELECT namexf,namexa,ver,pathx,pathIcon,flagSft,md5x,folderId "
+	dbopt.Sqlcmd += "FROM depotSft "
+	dbopt.Sqlcmd += "WHERE namexa = ? "
+	if !dbopt.Query(t_name) {return}
+	if dbopt.Rows.Next() {
+		dbopt.Rows.Scan(&r_sft.Namexf, &r_sft.Namexa, &r_sft.Ver, &r_sft.Pathx, &r_sft.PathIcon, &r_sft.FlgSft, &r_sft.Md5x, &r_sft.FolderID)
+		r_folderid = r_sft.FolderID
 	} else {
-		folderid = util.Guid()
-		return sft, folderid, false
+		r_folderid = util.Guid()
+		return
 	}
 
-	return sft, folderid, true
+	b_ret = true
+	return
 }
 
-func DelSft(t_sft *SxSoft) bool {
-	cnt, bret := dbbase.Open(util.GetSftCfg())
-	if bret == false {
-		return false
-	}
-	defer dbbase.Close(cnt)
+func DelSft(t_sft *SxSoft) (b_ret bool) {
+	dbopt,bret := dbbase.NewSxDB(&M_dbCfg.Db,"DelSft"); if !bret {return}
+	defer dbopt.Close()
 
-	sqlcmd := "DELETE FROM depotSft WHERE namexa = ? "
-	smt, err := cnt.Prepare(sqlcmd)
-	if err != nil {
-		util.L4F("DelSft  fail to Prepare " + err.Error())
-		return false
-	}
+	dbopt.Sqlcmd = "DELETE FROM depotSft WHERE namexa = ? "
+	if !dbopt.Exc(t_sft.Namexa){return}
 
-	_, err = smt.Exec(t_sft.Namexa)
-	if err != nil {
-		util.L4F("DelSft  " + err.Error())
-		return false
-	}
-
+	b_ret = true
+	util.L2I("software %s %s deleted",t_sft.Namexa,t_sft.FolderID)
 	return true
 }
 
 func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
-	sqlcmd := "SELECT namexf,namexa,ver,pathx,pathIcon,flagSft,md5x,folderId,descx FROM depotSft "
+	dbopt,bret := dbbase.NewSxDB(&M_dbCfg.Db,"GetSftLst"); if !bret {return}
+	defer dbopt.Close()
 
-	cnt, bret := dbbase.Open(util.GetSftCfg())
-	if bret == false {
-		util.L4F("GetSftLst  fail to open db " + M_dbCfg.Db.GetCntStr())
-		return nil, "", false
-	}
-	defer dbbase.Close(cnt)
+	dbopt.Sqlcmd = "SELECT namexf,namexa,ver,pathx,pathIcon,flagSft,md5x,folderId,descx FROM depotSft "
+	if !dbopt.Query(){return}
 
-	smt, err := cnt.Prepare(sqlcmd)
-	if err != nil {
-		util.L4F("GetSftLst  fail to Prepare " + err.Error())
-		return nil, "", false
-	}
-
-	rows, err := smt.Query()
-	if err != nil {
-		util.L4F("GetSft fail to Query " + err.Error())
-		return nil, "", false
-	}
-
-	lstSft := list.New()
+	r_lst = list.New()
 	var lstar []SxSftListEle
-	for rows.Next() {
+	for dbopt.Rows.Next() {
 		var sft SxSoft
 		var jxe SxSftListEle
-		rows.Scan(&sft.Namexf, &sft.Namexa, &sft.Ver, &sft.Pathx,
+		dbopt.Rows.Scan(&sft.Namexf, &sft.Namexa, &sft.Ver, &sft.Pathx,
 			&sft.PathIcon, &sft.FlgSft, &sft.Md5x, &sft.FolderID, &sft.Desc)
-		lstSft.PushBack(sft)
+		r_lst.PushBack(sft)
 
 		jxe.NamexF = sft.Namexf
 		jxe.NamexA = sft.Namexa
@@ -279,10 +217,11 @@ func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
 	}
 
 	jx, _ := json.Marshal(lstar)
-	strRetJson := "{\"repoAppList\":" + string(jx) + "}"
+	r_json = "{\"repoAppList\":" + string(jx) + "}"
 
 	util.L4F("GetSft num=" + fmt.Sprintf("%v", len(lstar)))
-	return lstSft, strRetJson, true
+	b_ret = true
+	return
 }
 
 func strx(t_ii string) string {

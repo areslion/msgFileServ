@@ -1,7 +1,6 @@
 package servMsg
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -293,7 +292,7 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 func StartServMsg(t_cfg *util.SxCfgAll) {
 	m_cfg = t_cfg
 
-	Tstservmsg()
+	//Tstservmsg()
 }
 
 func insertDBBytes(t_bts []byte) (r_id string, r_ret bool) {
@@ -316,13 +315,6 @@ func insertDBBytes(t_bts []byte) (r_id string, r_ret bool) {
 }
 
 func insertDB(t_msg *sxMsg) (r_ret bool) {
-	var cnt *sql.DB
-	cnt, r_ret = dbbase.Open(m_cfg)
-	if r_ret == false {
-		return
-	}
-	defer dbbase.Close(cnt)
-
 	r_ret = insertAbstract(t_msg)
 	if r_ret == false {
 		return
