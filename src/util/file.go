@@ -2,6 +2,7 @@ package util
 import(
 	"log"
 	"os"
+	"strings"
 	"fmt"
 
 	"github.com/satori/go.uuid"
@@ -60,6 +61,15 @@ func GetPathEle(t_path string)(r_file,r_fldID,r_Folder string){
 	// log.Println(folder,"|",filex)
 
 	return folder,folderID,filex
+}
+
+func GetFileName(t_path string)(r_name string){
+	substr := "/"
+	ix := strings.LastIndex(t_path,substr)
+	if ix !=-1 {r_name=t_path[ix+1:]}
+
+	//log.Println(t_path," ",substr," ",ix," ",r_name)
+	return
 }
 
 func GetFileSize(t_path string) (r_size int){

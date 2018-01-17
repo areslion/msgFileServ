@@ -165,7 +165,7 @@ func getAdminMsg(t_page, t_limit string) (r_bts []byte, b_ret bool) {
 
 	npage ,_:= strconv.Atoi(t_page)
 	nlimit ,_:= strconv.Atoi(t_limit)
-	sqlcmd := "SELECT (SELECT COUNT(*) FROM msgAbstract)num,namex,tmx,tmy,numSent,numSentOK,numSentKO "
+	sqlcmd := "SELECT (SELECT COUNT(*) FROM msgAbstract)num,namex,tmx,tmy,numSent,numSentOK,numSentKO,numMsg,os "
 	sqlcmd += "FROM msgAbstract "
 	sqlcmd += "LIMIT ?,? "
 
@@ -187,7 +187,7 @@ func getAdminMsg(t_page, t_limit string) (r_bts []byte, b_ret bool) {
 
 	for rows.Next() {
 		var ele sxMsg
-		rows.Scan(&resMsg.Totalnum, &ele.Name, &ele.Tmx, &ele.Tmy, &ele.Numsend, &ele.NumOK, &ele.NumKO)
+		rows.Scan(&resMsg.Totalnum, &ele.Name, &ele.Tmx, &ele.Tmy, &ele.Numsend, &ele.NumOK, &ele.NumKO,&ele.Guid,&ele.Os)
 		resMsg.Lst = append(resMsg.Lst, ele)
 
 		util.L2I(fmt.Sprintf("%v", ele))
@@ -308,71 +308,14 @@ func getOneTskDetail(t_msgid string) (r_bts []byte, b_ret bool) {
 	return
 }
 
+
 func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret bool) {
-	cnn := openx();if cnn==nil{return}
-	defer closex(cnn)
-
-	var (
-		sdx sxTskSendDetial
-		err error
-		smt *sql.Stmt
-		rows *sql.Rows
-		sqlcmd string
-	)
-
-	sqlcmd = "SELECT namex,numSent,numSentOK,numSentKO,descx FROM msgAbstract WHERE numMsg=? " 
-	smt,err= cnn.Prepare(sqlcmd); if err!=nil {
-		util.L3E("getOneTskSendDetail cnn.Prepare(%s) %s",sqlcmd,err.Error())
-		return
-	}
-
-	rows,err = smt.Query(t_tsk);if err!=nil{
-		util.L3E("getOneTskSendDetail smt.Query(%s) %s",t_tsk,err.Error())
-		return
-	}
-	if rows.Next() {rows.Scan(&sdx.Name,&sdx.NAll,&sdx.NOK,&sdx.NKO,&sdx.Detail)} else {
-		util.L3E("getOneTskSendDetail fail to get task %s",t_tsk)
-		return
-	}
-
-
-	rows.Close()
-	smt.Close()
-	sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE numMsg=?)num,numReciever,statusx,tmExc FROM msgSend WHERE numMsg=? limit ?,?" 
-	smt,err= cnn.Prepare(sqlcmd); if err!=nil {
-		util.L3E("getOneTskSendDetail cnn.Prepare(%s) %s",sqlcmd,err.Error())
-		return
-	}
-	rows,err = smt.Query(t_tsk,t_tsk,t_page*t_limit,t_limit);if err!=nil{
-		util.L3E("getOneTskSendDetail smt.Query(%s) %s",t_tsk,err.Error())
-		return
-	}
-	for rows.Next(){
-		var ele sxOneReciever
-		rows.Scan(&sdx.Totalnum,&ele.NumDev,&ele.Status,&ele.TmExc)
-		sdx.Lst = append(sdx.Lst,ele)
-	}
-
-	r_bts,err = json.Marshal(&sdx);if err!=nil {
-		util.L3E("getOneTskSendDetail json.Marshal(&sdx) %s",err.Error())
-		return
-	}
-
-
-	rows.Close()
-	smt.Close()
-	b_ret = true
-	util.L2I("getOneTskSendDetail (page%d/%d res=%d/%d)",t_page,t_limit,sdx.NAll,sdx.Totalnum)
-	return
-}
-
-func getOneTskSendDetailEx(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret bool) {
 	var (
 		sdx sxTskSendDetial
 		err error
 	)
 
-	dbopt ,bret:= dbbase.NewSxDB(&m_cfg.Db,"");if !bret {return}
+	dbopt ,bret:= dbbase.NewSxDB(&m_cfg.Db,"getOneTskSendDetail");if !bret {return}
 	defer dbopt.Close()
 
 	dbopt.Sqlcmd =  "SELECT namex,numSent,numSentOK,numSentKO,descx FROM msgAbstract WHERE numMsg=? " 
@@ -582,25 +525,20 @@ func saveDescBytes(t_id string, t_bts []byte) (r_ret bool) {
 }
 
 func updateUsrTsk(t_tskid, t_usrid string, t_status int) (b_ret bool) {
-	cnn := openx()
-	if cnn == nil {
-		return
-	}
-	defer closex(cnn)
-
 	var nOK, nKO int = 0, 0
-	nOK, nKO, b_ret = updateSendStatus(cnn, t_tskid, t_usrid, t_status)
-	if !b_ret {
-		return
-	}
+	nOK, nKO, b_ret = updateSendStatus(t_tskid, t_usrid, t_status)
+	if !b_ret {	return}
 	if t_status >= cst_tsks_3e {
-		b_ret = updateAbstractNum(cnn, t_tskid, nOK, nKO)
+		b_ret = updateAbstractNum(t_tskid, nOK, nKO)
 	}
 
 	return
 }
 
-func updateSendStatus(cnn *sql.DB, t_tskid, t_usrid string, t_status int) (r_OK, r_KO int, b_ret bool) {
+func updateSendStatus(t_tskid, t_usrid string, t_status int) (r_OK, r_KO int, b_ret bool) {
+	dbopt,bret := dbbase.NewSxDB(&m_cfg.Db,"updateSendStatus");if !bret {return}
+	defer dbopt.Close()
+
 	bvalid := false
 	for _, itm := range cst_tsksArr {
 		if itm == t_status {
@@ -609,27 +547,16 @@ func updateSendStatus(cnn *sql.DB, t_tskid, t_usrid string, t_status int) (r_OK,
 		}
 	}
 	if bvalid == false {
-		util.L3E("updateSendStatus invalid status " + fmt.Sprintf("%d", t_status))
+		util.L3E("updateSendStatus invalid status (%s %s %d)",t_tskid, t_usrid, t_status)
 		return
 	}
 
 	var statusOld int
-	var rows *sql.Rows
-	sqlcmd := "SELECT statusx FROM msgSend WHERE numMsg=? AND numReciever=? "
-	smt, err := cnn.Prepare(sqlcmd)
-	if err != nil {
-		util.L3E("updateSendStatus cnn.Prepare(%s) %s", sqlcmd, err.Error())
-		return
-	}
-	rows, err = smt.Query(t_tskid, t_usrid)
-	if err != nil {
-		util.L3E("updateSendStatus smt.Query(%s %s) %s", t_tskid, t_usrid, err.Error())
-		return
-	}
-	if rows.Next() {
-		rows.Scan(&statusOld)
-	} else {
-		util.L3E("updateSendStatus smt.Query(%s %s) %s", sqlcmd, err.Error())
+
+	dbopt.Sqlcmd = "SELECT statusx FROM msgSend WHERE numMsg=? AND numReciever=? "
+	if !dbopt.Query(t_tskid, t_usrid) {return}
+	if dbopt.Rows.Next() { dbopt.Rows.Scan(&statusOld) } else {
+		util.L3E("updateSendStatus smt.Query(%s) failed", dbopt.Sqlcmd)
 		return
 	}
 
@@ -652,57 +579,28 @@ func updateSendStatus(cnn *sql.DB, t_tskid, t_usrid string, t_status int) (r_OK,
 		r_OK = 1
 	}
 
-	sqlcmd = "UPDATE msgSend SET statusx=? WHERE numMsg=? AND numReciever=? "
-	smt, err = cnn.Prepare(sqlcmd)
-	if err != nil {
-		util.L3E("updateSendStatus cnn.Prepare() " + err.Error())
-		return
-	}
+	dbopt.Sqlcmd = "UPDATE msgSend SET statusx=? WHERE numMsg=? AND numReciever=? "
+	if !dbopt.Exc(t_status, t_tskid, t_usrid) {return}
 
-	var res sql.Result
-	var affcted int64
-	res, err = smt.Exec(t_status, t_tskid, t_usrid)
-	if err != nil {
-		util.L3E("updateSendStatus smt.Exec " + err.Error())
-		return
-	}
-	affcted, err = res.RowsAffected()
-	if err != nil {
-		util.L3E("updateSendStatus res.RowsAffected() " + err.Error())
-		return
-	}
+	affcted := dbopt.Affected()
 	if affcted < 1 {
 		util.L3E(fmt.Sprintf("updateUsrTsk RowsAffected()=%d no relative record(dev=%s tsk=%s) find", affcted, t_usrid, t_tskid))
 		return
 	}
 
 	b_ret = true
-	util.L2I("updateSendStatus OK dev=" + t_usrid + " tsk=" + t_tskid + " status=" + fmt.Sprintf("%d  affcted=%d", t_status, affcted))
+	util.L2I("updateSendStatus OK dev=%s tsk=%s status=%d affcted=%d",t_usrid,t_tskid, t_status, affcted)
 
 	return
 }
 
-func updateAbstractNum(cnn *sql.DB, t_tskid string, t_OK, t_KO int) (b_ret bool) {
-	sqlcmd := "UPDATE msgAbstract SET numSentOK=numSentOK+?,numSentKO =numSentKO+? "
-	sqlcmd += "WHERE numMsg=?"
-	smt, err := cnn.Prepare(sqlcmd)
-	if err != nil {
-		util.L3E("updateAbstractNum cnn.Prepare(%s) %s", sqlcmd, err.Error())
-		return
-	}
+func updateAbstractNum(t_tskid string, t_OK, t_KO int) (b_ret bool) {
+	dbopt,bret := dbbase.NewSxDB(&m_cfg.Db,"updateAbstractNum");if !bret {return}
+	defer dbopt.Close()
 
-	var res sql.Result
-	var affcted int64
-	res, err = smt.Exec(t_OK, t_KO, t_tskid)
-	if err != nil {
-		util.L3E("updateAbstractNum smt.Exec %s %s", sqlcmd, err.Error())
-		return
-	}
-	affcted, err = res.RowsAffected()
-	if err != nil {
-		util.L3E("updateAbstractNum res.RowsAffected() " + err.Error())
-		return
-	}
+	dbopt.Sqlcmd = "UPDATE msgAbstract SET numSentOK=numSentOK+?,numSentKO =numSentKO+? WHERE numMsg=?"
+	if !dbopt.Exc(t_OK, t_KO, t_tskid) {return}
+	affcted := dbopt.Affected()
 	if affcted < 1 {
 		util.L3E("updateAbstractNum RowsAffected()=%d no relative record(tsk=%s nOK=%d nKO=%d) update", affcted, t_tskid, t_OK, t_KO)
 		return

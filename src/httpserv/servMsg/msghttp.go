@@ -100,7 +100,7 @@ func getsendlst(t_res http.ResponseWriter,t_ask *http.Request){
 		}
 
 		var bts []byte
-		bts,bret = getOneTskSendDetailEx(tskid,page,limit);if bret {
+		bts,bret = getOneTskSendDetail(tskid,page,limit);if bret {
 			t_res.Header().Set("Content-Type",cst_json)
 			t_res.Write(bts)
 		}
@@ -129,7 +129,7 @@ func newmsg(t_res http.ResponseWriter, t_ask *http.Request) {
 
 func parseAsk(t_ask *http.Request) (r_ret bool) {
 	muti_reader, _err := t_ask.MultipartReader()
-	var bfileSave, bDesc bool =false ,false 
+	var bfileSave, bDesc bool =true ,false 
 	var attx [100]sxAttEle
 	var ixat int =0
 	var bufDes = new(bytes.Buffer)
@@ -157,9 +157,11 @@ func parseAsk(t_ask *http.Request) (r_ret bool) {
 
 
 		}
+	} else {
+		util.L3E("parseAsk %s",_err.Error())
 	}
 
-	if bDesc && ixat >0 {
+	if bDesc {
 		var msgid string
 		msgid,r_ret = insertDBBytes(bufDes.Bytes());if r_ret==false {return}
 
@@ -169,9 +171,10 @@ func parseAsk(t_ask *http.Request) (r_ret bool) {
 			bsaves := saveAttach(itm.name,msgid,itm.buf.Bytes())
 			bfileSave = bfileSave||bsaves
 		}
-	}
+	} else {r_ret=false}
 
-	return bfileSave
+	r_ret = true
+	return
 }
 
 func usrget(t_res http.ResponseWriter,t_ask *http.Request){
@@ -212,10 +215,11 @@ func usrupdate(t_res http.ResponseWriter,t_ask *http.Request){
 
 	bret := false
 	if t_ask.Method == "POST" {
-		tsk := t_ask.FormValue("tsk")
+		tsk := t_ask.FormValue("task")
 		dev := t_ask.FormValue("dev")
 		statux,_ := strconv.Atoi(t_ask.FormValue("status"))
 
+		util.L2I("usrupdate (task=%s dev=%s status=%d)",tsk,dev,statux)
 		bret = updateUsrTsk(tsk,dev,statux)
 	}
 	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}

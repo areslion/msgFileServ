@@ -46,16 +46,28 @@ func (p *sxLog)createFile() {
 	}
 }
 
+func getFileStack(t_depth,t_garde int)(r_msg string){
+	for ix:=0;ix<t_garde;ix++ {
+		_, file, line, _ := runtime.Caller(t_depth-ix)
+		fname := GetFileName(file)
+
+		r_msg += fmt.Sprintf("/%s:%d",fname,line)
+	}
+
+	return
+}
+
 func (p *sxLog) printx(t_tab string, format string, v ...interface{}) {
 	p.lckx.Lock()
 	defer p.lckx.Unlock()
 
 	_, file, line, _ := runtime.Caller(cst_depth)
-	_, _, fname := GetPathEle(file)
+	fname := GetFileName(file)
 
 	var strMsg string
 	strtmx := time.Now().Format("2006-01-02 15:04:05")
 	strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s:%d", fname, line)
+	//strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s",getFileStack(4,4))
 	strF := strtmx + "  " + strMsg +"\r\n"
 	if (p.nOutObj & 0x01)>0 { log.Println(strMsg) }
 	if (p.nOutObj & 0x02)>0 { 
@@ -64,9 +76,30 @@ func (p *sxLog) printx(t_tab string, format string, v ...interface{}) {
 	lgx.sizeCur += len(strF)
 
 	if lgx.sizeCur > lgx.sizeMax { lgx.rotate() }
-
-	
 }
+
+
+func (p *sxLog) printEx(t_dep,t_grad int,t_tab string, format string, v ...interface{}) {
+	p.lckx.Lock()
+	defer p.lckx.Unlock()
+
+	// _, file, line, _ := runtime.Caller(cst_depth)
+	// fname := GetFileName(file)
+
+	var strMsg string
+	strtmx := time.Now().Format("2006-01-02 15:04:05")
+	//strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s:%d", fname, line)
+	strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s",getFileStack(t_dep,t_grad))
+	strF := strtmx + "  " + strMsg +"\r\n"
+	if (p.nOutObj & 0x01)>0 { log.Println(strMsg) }
+	if (p.nOutObj & 0x02)>0 { 
+		lgx.file.Write([]byte(strF)) 
+	}
+	lgx.sizeCur += len(strF)
+
+	if lgx.sizeCur > lgx.sizeMax { lgx.rotate() }
+}
+
 
 func (p* sxLog)rotate(){
 	p.file.Close()
@@ -102,4 +135,11 @@ func L4F(format string, v ...interface{}) {
 		return
 	}
 	lgx.printx("F", format, v...)
+}
+
+func L4Fx(t_dep,t_grad int,format string, v ...interface{}) {
+	if lgx.nlevel > cst_lgL4 {
+		return
+	}
+	lgx.printEx(t_dep,t_grad,"F", format, v...)
 }

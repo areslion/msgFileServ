@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 import (
+	"fmt"
 	"util"
 )
 
@@ -24,11 +25,20 @@ type sxDB struct {
 	res    sql.Result
 	cfg    *util.SxCfg_db
 	Sqlcmd string
+	tag string
 }
 
-func NewSxDB(t_cfg *util.SxCfg_db, t_sql string) (r_new *sxDB, b_ret bool) {
-	r_new = &sxDB{cfg: t_cfg, Sqlcmd: t_sql}
+func NewSxDB(t_cfg *util.SxCfg_db, t_tag string) (r_new *sxDB, b_ret bool) {
+	r_new = &sxDB{cfg: t_cfg, tag: t_tag}
 	b_ret = r_new.open()
+	return
+}
+func (p *sxDB) Affected()(r_afc int64) {
+	var err error
+	r_afc, err = p.res.RowsAffected()
+	if err != nil {
+		p.logF("updateSendStatus res.RowsAffected() " + err.Error())
+	}
 	return
 }
 func (p *sxDB) Close() {
@@ -45,9 +55,9 @@ func (p *sxDB) Exc(args ...interface{}) (b_ret bool) {
 		return
 	}
 
-	p.res, err = p.smt.Exec(args)
+	p.res, err = p.smt.Exec(args...)
 	if err != nil {
-		util.L4F("SxDB Fail to Query(args) " + err.Error())
+		p.logF("Exc Fail to Query(args) " + err.Error())
 		return
 	}
 
@@ -58,7 +68,7 @@ func (p *sxDB) open() (b_ret bool) {
 	var err error
 	p.cnn, err = sql.Open("mysql", p.cfg.GetCntStr())
 	if err != nil {
-		util.L4F("SxDB Fail to open db " + err.Error() + " " + p.cfg.GetCntStr())
+		p.logF("open() Fail to open db " + err.Error() + " " + p.cfg.GetCntStr())
 		return
 	}
 	b_ret = true
@@ -72,7 +82,7 @@ func (p *sxDB) Query(args ...interface{}) (b_ret bool) {
 
 	p.Rows, err = p.smt.Query(args...)
 	if err != nil {
-		util.L4F("SxDB Fail to Query(args) " + err.Error())
+		p.logF("Query() Fail to Query(args) " + err.Error())
 		return
 	}
 
@@ -85,11 +95,15 @@ func (p *sxDB) prePare() (b_ret bool) {
 	var err error
 	p.smt, err = p.cnn.Prepare(p.Sqlcmd)
 	if err != nil {
-		util.L4F("SxDB Fail to Prepare(%s) %s", p.Sqlcmd, err.Error())
+		p.logF("prePare() Fail to Prepare(%s) %s", p.Sqlcmd, err.Error())
 		return
 	}
 	b_ret = true
 	return
+}
+func (p *sxDB) logF(t_fmt string,v...interface{}){
+	fmtx := fmt.Sprintf("sxDB(%s) %s",p.tag,t_fmt)
+	util.L4Fx(5,2,fmtx,v...)
 }
 
 func (p *SCfg) Init(t_ip, t_usr, t_pwd, t_db, t_cset string) {
@@ -110,26 +124,6 @@ var (
 	m_cfgdb *util.SxCfgAll
 )
 
-func Tstmysql() bool {
-
-	var err error
-	strcnt := m_cfgdb.Db.GetCntStr()
-	cnn, err := sql.Open("mysql", strcnt)
-	if err != nil {
-		util.L3E("Fail to open db " + err.Error())
-		return false
-	}
-	defer cnn.Close()
-
-	rows, err := cnn.Query("SELECT numDev from terDevBasicInfo")
-	if err != nil {
-		util.L3E("Fail to select data " + err.Error())
-	}
-	showRows(rows)
-
-	return true
-}
-
 func Open(cfg *util.SxCfgAll) (r_cnt *sql.DB, r_res bool) {
 	m_cfgdb = cfg
 
@@ -146,14 +140,4 @@ func Close(t_cnn *sql.DB) {
 	t_cnn.Close()
 }
 
-func showRows(t_rows *sql.Rows) {
-	var numDev string
 
-	for t_rows.Next() {
-
-		err := t_rows.Scan(&numDev)
-		if err == nil {
-			util.L1T("Res:" + numDev)
-		}
-	}
-}
