@@ -110,49 +110,30 @@ func delMsg(t_msgid string) (b_ret bool) {
 		return
 	}
 
+	dbopt,bret := dbbase.NewSxDB(&m_cfg.Db,"delMsg");if !bret {return}
+	defer dbopt.Close()
+
 	util.L2I("delMsg start to delete msg " + t_msgid)
 	folder := m_cfg.ServFile.PathMsg + util.GetOSSeptor() + t_msgid
-	err := os.RemoveAll(folder)
-	if err != nil {
-		util.L3E("delMsg os.RemoveAll(%s) %s", folder, err.Error())
-		return
-	} else {
-		util.L2I("delMsg foler %s removed", folder)
+	if util.IsExists(folder) {
+		err := os.RemoveAll(folder)
+		if err != nil {
+			util.L3E("delMsg os.RemoveAll(%s) %s", folder, err.Error())
+			return
+		} else {
+			util.L2I("delMsg foler %s removed", folder)
+		}
 	}
 
-	cnn := openx()
-	if cnn == nil {
-		return
-	}
-	defer closex(cnn)
+	dbopt.Sqlcmd = "DELETE FROM msgAbstract WHERE numMsg=?"
+	if !dbopt.Exc(t_msgid){return}
+	util.L2I("delMsg deleted %s form msgAbstract %d",t_msgid,dbopt.Affected())
 
-	cmdsql := "DELETE FROM msgAbstract WHERE numMsg=?"
-	smt, err := cnn.Prepare(cmdsql)
-	if err != nil {
-		util.L3E("delMsg cnn.Prepare(%s) %s", cmdsql, err.Error())
-		return
-	}
-	_, err = smt.Exec(t_msgid)
-	if err != nil {
-		util.L3E("delMsg smt.Exec(%s) %s", t_msgid, err.Error())
-		return
-	}
-	util.L2I("delMsg deleted form msgAbstract")
+	dbopt.Sqlcmd = "DELETE FROM msgSend WHERE numMsg=?"
+	if !dbopt.Exc(t_msgid) {return}
+	util.L2I("delMsg deleted %s form msgSend %d",t_msgid,dbopt.Affected())
 
-	cmdsql = "DELETE FROM msgSend WHERE numMsg=?"
-	smt, err = cnn.Prepare(cmdsql)
-	if err != nil {
-		util.L3E("delMsg cnn.Prepare(%s) %s", cmdsql, err.Error())
-		return
-	}
-	_, err = smt.Exec(t_msgid)
-	if err != nil {
-		util.L3E("delMsg smt.Exec(%s) %s", t_msgid, err.Error())
-		return
-	}
-	util.L2I("delMsg deleted form msgSend")
 	b_ret = true
-
 	return
 }
 
