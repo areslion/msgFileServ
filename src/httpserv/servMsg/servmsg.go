@@ -157,37 +157,25 @@ func delMsg(t_msgid string) (b_ret bool) {
 }
 
 func getAdminMsg(t_page, t_limit string) (r_bts []byte, b_ret bool) {
-	cnn := openx()
-	if cnn == nil {
-		return
-	}
-	defer closex(cnn)
+	dbopt,bret := dbbase.NewSxDB(&m_cfg.Db,"getAdminMsg") ; if !bret {return}
+	defer dbopt.Close()
 
 	npage ,_:= strconv.Atoi(t_page)
 	nlimit ,_:= strconv.Atoi(t_limit)
-	sqlcmd := "SELECT (SELECT COUNT(*) FROM msgAbstract)num,namex,tmx,tmy,numSent,numSentOK,numSentKO,numMsg,os "
-	sqlcmd += "FROM msgAbstract "
-	sqlcmd += "LIMIT ?,? "
 
-	util.L2I(sqlcmd)
-	smt, err := cnn.Prepare(sqlcmd)
-	if err != nil {
-		util.L3E("getAdminMsg Prepare " + err.Error())
-	}
-	defer smt.Close()
-	rows, err := smt.Query(npage*nlimit, t_limit)
-	if err != nil {
-		util.L3E("getAdminMsg smt.Query " + err.Error())
-		return
-	}
+	dbopt.Sqlcmd = "SELECT (SELECT COUNT(*) FROM msgAbstract)num,namex,tmx,tmy,numSent,numSentOK,numSentKO,numMsg,os "
+	dbopt.Sqlcmd  += "FROM msgAbstract "
+	dbopt.Sqlcmd  += "LIMIT ?,? "
+
+	if !dbopt.Query(npage*nlimit, t_limit){return}
 
 	var resMsg sxMsgAskRes
-	resMsg.Page, _ = strconv.Atoi(t_page)
-	resMsg.Limit, _ = strconv.Atoi(t_limit)
+	resMsg.Page = npage
+	resMsg.Limit = nlimit
 
-	for rows.Next() {
+	for dbopt.Rows.Next() {
 		var ele sxMsg
-		rows.Scan(&resMsg.Totalnum, &ele.Name, &ele.Tmx, &ele.Tmy, &ele.Numsend, &ele.NumOK, &ele.NumKO,&ele.Guid,&ele.Os)
+		dbopt.Rows.Scan(&resMsg.Totalnum, &ele.Name, &ele.Tmx, &ele.Tmy, &ele.Numsend, &ele.NumOK, &ele.NumKO,&ele.Guid,&ele.Os)
 		resMsg.Lst = append(resMsg.Lst, ele)
 
 		util.L2I(fmt.Sprintf("%v", ele))
