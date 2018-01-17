@@ -17,61 +17,75 @@ type SCfg struct {
 	charset  string
 }
 
-type SxDB struct{
-	Cnn *sql.DB
-	Rows *sql.Rows
-	Smt *sql.Stmt
-	Res sql.Result
-	Cfg *util.SxCfg_db
+type sxDB struct {
+	cnn    *sql.DB
+	Rows   *sql.Rows
+	smt    *sql.Stmt
+	res    sql.Result
+	cfg    *util.SxCfg_db
 	Sqlcmd string
 }
-func (p *SxDB)Close(){
-	p.CloseRes()
-	p.Cnn.Close()
+
+func NewSxDB(t_cfg *util.SxCfg_db, t_sql string) (r_new *sxDB, b_ret bool) {
+	r_new = &sxDB{cfg: t_cfg, Sqlcmd: t_sql}
+	b_ret = r_new.open()
+	return
 }
-func (p *SxDB)CloseRes(){
-	p.Rows.Close()
-	p.Smt.Close()
+func (p *sxDB) Close() {
+	p.closeRes()
+	p.cnn.Close()
 }
-func NewSxDB(t_cfg *util.SxCfg_db)(r_new *SxDB){
-	return &SxDB{Cfg:t_cfg}
+func (p *sxDB) closeRes() {
+	if p!=nil&&p.Rows!=nil {p.Rows.Close()}
+	if p!=nil&&p.smt!=nil {p.smt.Close()}
 }
-func (p *SxDB)Open()(b_ret bool){
+func (p *sxDB) Exc(args ...interface{}) (b_ret bool) {
 	var err error
-	p.Cnn, err = sql.Open("mysql", p.Cfg.GetCntStr())
+	if !p.prePare() {
+		return
+	}
+
+	p.res, err = p.smt.Exec(args)
 	if err != nil {
-		util.L4F("SxDB Fail to open db " + err.Error() + " " + p.Cfg.GetCntStr())
-		return
-	}
-	b_ret = true
-	return
-}
-func (p *SxDB)Query(args ...interface{})(b_ret bool){
-	var err error
-	p.Rows,err = p.Smt.Query(args);if err!=nil {
-		util.L4F("SxDB Fail to Query(args) "+err.Error())
+		util.L4F("SxDB Fail to Query(args) " + err.Error())
 		return
 	}
 
 	b_ret = true
 	return
 }
-func (p *SxDB)Exc(args ...interface{})(b_ret bool){
+func (p *sxDB) open() (b_ret bool) {
 	var err error
-	p.Res,err = p.Smt.Exec(args);if err!=nil {
-		util.L4F("SxDB Fail to Query(args) "+err.Error())
+	p.cnn, err = sql.Open("mysql", p.cfg.GetCntStr())
+	if err != nil {
+		util.L4F("SxDB Fail to open db " + err.Error() + " " + p.cfg.GetCntStr())
+		return
+	}
+	b_ret = true
+	return
+}
+func (p *sxDB) Query(args ...interface{}) (b_ret bool) {
+	var err error
+	if !p.prePare() {
+		return
+	}
+
+	p.Rows, err = p.smt.Query(args...)
+	if err != nil {
+		util.L4F("SxDB Fail to Query(args) " + err.Error())
 		return
 	}
 
 	b_ret = true
 	return
 }
-func (p *SxDB)PrePare()(b_ret bool){
-	p.CloseRes()
+func (p *sxDB) prePare() (b_ret bool) {
+	p.closeRes()
 
 	var err error
-	p.Smt,err = p.Cnn.Prepare(p.Sqlcmd);if err!=nil{
-		util.L4F("SxDB Fail to Prepare(%s) %s",p.Sqlcmd,err.Error())
+	p.smt, err = p.cnn.Prepare(p.Sqlcmd)
+	if err != nil {
+		util.L4F("SxDB Fail to Prepare(%s) %s", p.Sqlcmd, err.Error())
 		return
 	}
 	b_ret = true

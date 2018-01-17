@@ -366,6 +366,40 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 	return
 }
 
+func getOneTskSendDetailEx(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret bool) {
+	var (
+		sdx sxTskSendDetial
+		err error
+	)
+
+	dbopt ,bret:= dbbase.NewSxDB(&m_cfg.Db,"");if !bret {return}
+	defer dbopt.Close()
+
+	dbopt.Sqlcmd =  "SELECT namex,numSent,numSentOK,numSentKO,descx FROM msgAbstract WHERE numMsg=? " 
+	if !dbopt.Query(t_tsk) {return}
+	if dbopt.Rows.Next() {dbopt.Rows.Scan(&sdx.Name,&sdx.NAll,&sdx.NOK,&sdx.NKO,&sdx.Detail)} else {
+		util.L3E("getOneTskSendDetail fail to get task %s",t_tsk)
+		return
+	}
+
+	dbopt.Sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE numMsg=?)num,numReciever,statusx,tmExc FROM msgSend WHERE numMsg=? limit ?,?" 
+	if !dbopt.Query(t_tsk,t_tsk,t_page*t_limit,t_limit){return}
+	for dbopt.Rows.Next(){
+		var ele sxOneReciever
+		dbopt.Rows.Scan(&sdx.Totalnum,&ele.NumDev,&ele.Status,&ele.TmExc)
+		sdx.Lst = append(sdx.Lst,ele)
+	}
+
+	r_bts,err = json.Marshal(&sdx);if err!=nil {
+		util.L3E("getOneTskSendDetail json.Marshal(&sdx) %s",err.Error())
+		return
+	}
+
+	b_ret = true
+	util.L2I("getOneTskSendDetail (page%d/%d res=%d/%d)",t_page,t_limit,sdx.NAll,sdx.Totalnum)
+	return
+}
+
 func openx() (r_cnnt *sql.DB) {
 	var bret bool
 	r_cnnt, bret = dbbase.Open(m_cfg)

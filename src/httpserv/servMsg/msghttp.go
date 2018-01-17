@@ -100,7 +100,7 @@ func getsendlst(t_res http.ResponseWriter,t_ask *http.Request){
 		}
 
 		var bts []byte
-		bts,bret = getOneTskSendDetail(tskid,page,limit);if bret {
+		bts,bret = getOneTskSendDetailEx(tskid,page,limit);if bret {
 			t_res.Header().Set("Content-Type",cst_json)
 			t_res.Write(bts)
 		}
