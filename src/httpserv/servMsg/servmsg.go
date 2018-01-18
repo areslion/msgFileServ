@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -238,17 +239,12 @@ func getOneTskDetail(t_msgid string) (r_bts []byte, b_ret bool) {
 		return
 	}
 
-	var msgx sxMsg
-	err = json.Unmarshal(bts, &msgx)
-	if err != nil {
-		util.L3E(fmt.Sprintf("getOneTsk json.Unmarshal(bts,&sxMsg) %s %s", path, err.Error()))
-		return
-	}
+	btstr := string(bts)
+	btstrnew := strings.Replace(btstr,"\\u0026","&",-1)
 
+	util.L1T("getOneTskDetail "+btstrnew)
+	r_bts = []byte(btstrnew)
 	b_ret = true
-
-	util.L1T("%v", msgx)
-	r_bts = []byte(fmt.Sprintf("%v", msgx))
 	util.L2I("getOneTsk " + t_msgid + " OK")
 	return
 }

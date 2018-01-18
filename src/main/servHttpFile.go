@@ -59,7 +59,7 @@ func init(){
 
 func main() {
 	util.L2I("file and message server started...")
-	util.L2I("version 1.0.60")
+	util.L2I("version 1.0.0.61 2018-1-18")
 	mutiRun()
 }
 
