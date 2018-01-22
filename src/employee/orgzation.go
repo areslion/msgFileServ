@@ -167,6 +167,7 @@ func (p *sxManList) readAllMan() {
 	// }
 }
 
+
 func (p *sxManList) getDep(t_grade int)(r_key string,r_lst []string){
 	//util.L2I("getDep %d %d",t_grade ,len(p.mapLstDep))
 	if t_grade+1 > len(p.mapLstDep) {	return}
@@ -258,7 +259,7 @@ func (p *sxOrg) itorx(){
 func (p *sxOrg) matchFater(t_path []string)(r_fater *sxOrg){
 	var keyx,cuKey string
 	if p==nil {return}
-	if len(t_path) < p.Depth {return}
+	if p.Depth>len(t_path) {return}
 
 
 	for ix:=0;ix<len(t_path);ix++ {
@@ -271,19 +272,13 @@ func (p *sxOrg) matchFater(t_path []string)(r_fater *sxOrg){
 
 	
 
-	util.L2I("p.Depth=%d [%s]---[%s]",p.Depth,p.Path,keyx)
+	util.L1T("%d [%s]---for---[%s]",p.Depth,p.Path,keyx)
 	if keyx==p.Path {
-		util.L2I("found-------------------------------%d %s %s",p.Depth,p.Path,p.Curkey)
+		util.L1T("found-------------------------------%d %s %s",p.Depth,p.Path,p.Curkey)
 		return p
 	}
 
-	util.L2I("keyx=%s   cuKey=%s",keyx,cuKey)
 	if p.Depth==len(t_path)&&keyx!=cuKey {
-		for ix,_:=range p.Brother {
-			r_fater = p.Brother[ix].matchFater(t_path)
-			if r_fater!=nil {return}
-		}
-	}else if p.Depth==len(t_path) && p.Curkey==t_path[len(t_path)-1] {
 		for ix,_:=range p.Brother {
 			r_fater = p.Brother[ix].matchFater(t_path)
 			if r_fater!=nil {return}
@@ -295,6 +290,18 @@ func (p *sxOrg) matchFater(t_path []string)(r_fater *sxOrg){
 		} 
 	}
 
+	return
+}
+
+func (p *sxOrg) toJson()(r_bts []byte,r_json string,b_ret bool){
+	var err error
+	r_bts,err = json.Marshal(p);if err!=nil{
+		util.L3E("sxOrg toJson Marshal"+err.Error())
+		return
+	}
+
+	b_ret = true
+	r_json = string(r_bts)
 	return
 }
 
@@ -321,6 +328,7 @@ func (p * sxOrg) insertBrother(t_man *sxMan){
 func (p * sxOrg) insertChild(t_man *sxMan){
 	if p.Depth >= len(t_man.depart) {return}
 	if p==nil {return}
+	
 
 	var px *sxOrg = p
 	for ix:=len(t_man.depart);ix>=0;ix-- {
@@ -333,6 +341,7 @@ func (p * sxOrg) insertChild(t_man *sxMan){
 	var childx sxOrg
 	childx.Curkey = t_man.depart[p.Depth]
 	childx.Path,_ = t_man.getKeyPath(px.Depth)
+	if childx.Path == p.Path {return}
 	childx.Depth = px.Depth +1
 	px.Child = append(px.Child,&childx)
 

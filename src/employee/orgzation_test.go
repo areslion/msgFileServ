@@ -1,7 +1,9 @@
 package employee
 import (
+	"io/ioutil"
 	"log"
 	"encoding/json"
+	"os"
 	"testing"
 	"util"
 )
@@ -9,7 +11,7 @@ import (
 var manlst sxManList
 func Test_readAllMan(t *testing.T){
 	util.L2I("Start unit test")
-	//manlst.readAllMan()
+	manlst.readAllMan()
 	util.L2I("%d\n\n",util.SizeStruct(manlst))
 
 	//manlst.getOrgMap()
@@ -72,7 +74,24 @@ func Test_getDep(t *testing.T){
 	manx.parse(cst_sep,true,&manxLst)
 	orx.insertChild(&manx)
 
+	orx.insertChild(&manx)
+	orx.insertChild(&manx)
+	orx.insertChild(&manx)
+
 	
 	bts,_:=json.Marshal(orx)
 	util.L2I(string(bts))
+}
+
+func Test_orgTree(t *testing.T){
+	var orgx sxOrg
+
+	for _,itm := range manlst.mapLstMan {
+		orgx.insertChild(&itm)
+	}
+
+	bts,_,bret := orgx.toJson();if bret {
+		ioutil.WriteFile(".\\tree.json",bts,os.ModePerm)
+	}
+	
 }
