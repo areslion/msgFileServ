@@ -274,6 +274,9 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 		sdx.Lst = append(sdx.Lst,ele)
 	}
 
+	sdx.Task = t_tsk
+	sdx.Limit = t_limit
+	sdx.Page = t_page
 	r_bts,err = json.Marshal(&sdx);if err!=nil {
 		util.L3E("getOneTskSendDetail json.Marshal(&sdx) %s",err.Error())
 		return
