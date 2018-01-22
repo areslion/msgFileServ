@@ -1,9 +1,6 @@
 package employee
 import (
-	"io/ioutil"
 	"log"
-	_ "encoding/json"
-	"os"
 	"testing"
 	"util"
 )
@@ -13,8 +10,6 @@ func Test_readAllMan(t *testing.T){
 	util.L2I("Start unit test")
 	manlst.readAllMan()
 	util.L2I("%d\n\n",util.SizeStruct(manlst))
-
-	//manlst.getOrgMap()
 }
 
 func Test_getDep(t *testing.T){
@@ -68,17 +63,33 @@ func Test_getDep(t *testing.T){
 	
 	bts,_,_:=orx.toJson()
 	util.L2I(string(bts))
+
+
+	lst := orx.GetLstDepat("n"+cst_sep+"x"+cst_sep+"b")
+	for ix,itm := range lst{
+		util.L2I("%d %s",ix,itm)
+	}
 }
 
+var orgx sxOrg
 func Test_orgTree(t *testing.T){
-	var orgx sxOrg
-
 	for _,itm := range manlst.mapLstMan {
 		orgx.insertChild(&itm)
 	}
 
-	bts,_,bret := orgx.toJson();if bret {
-		ioutil.WriteFile(".\\tree.json",bts,os.ModePerm)
-	}
+	orgx.saveJson(".\\tree.json")
 	
+}
+
+
+func Test_GetMsg(t *testing.T){
+	lst := orgx.GetLstDepat("")
+	for ix,itm := range lst{
+		util.L2I("%d %s",ix,itm)
+	}
+
+	lst = orgx.GetLstDepat("楚雄供电局")
+	for ix,itm := range lst{
+		util.L2I("%d %s",ix,itm)
+	}
 }

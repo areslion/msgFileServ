@@ -4,9 +4,12 @@ package employee
 import (
 	"encoding/json"
 	"strings"
+	"io/ioutil"
+	"os"
 	//"database/sql"
 )
 import (
+	"fmt"
 	"dbbase"
 	"util"
 )
@@ -51,22 +54,25 @@ type sxOrg struct {
 	Men     []sxMan `json:Men`
 }
 
-func (p *sxMan) getKeyPath(t_grad int) (s_ret string, b_ret bool) {
+func (p *sxMan) getKeyPath(t_grad int) (s_ret,s_lst string, b_ret bool) {
 	if t_grad+1 > len(p.depart) {
 		return
 	}
 
 	for ix := 0; ix <= t_grad; ix++ {
 		if ix == 0 {
-			s_ret = s_ret + p.depart[ix]
+			s_ret = s_ret + p.depart[ix]			
 		} else {
 			s_ret = s_ret + cst_sep + p.depart[ix]
 		}
+		s_lst = p.depart[ix]
 	}
 
 	b_ret = true
 	return
 }
+
+
 
 // parse one man's department according path
 func (p *sxMan) parse(t_sep string, t_LtoR bool, t_lst *sxManList) {
@@ -338,6 +344,17 @@ func (p *sxOrg) matchFater(t_path []string) (r_fater *sxOrg) {
 	return
 }
 
+func (p *sxOrg) saveJson(t_path string){
+	bts,_,bret := p.toJson();if !bret{return}
+
+	ioutil.WriteFile(t_path,bts,os.ModePerm)
+}
+
+func (p *sxOrg)string()(r_str string){
+	r_str = fmt.Sprintf("%d %s %s",p.Depth,p.Curkey,p.Path)
+	return
+}
+
 func (p *sxOrg) toJson() (r_bts []byte, r_json string, b_ret bool) {
 	var err error
 	r_bts, err = json.Marshal(p)
@@ -364,6 +381,21 @@ func (p *sxOrg) getAddr(t_path []string) (t_addr *sxOrg) {
 			//for iy,ity := range p.Brother{
 			//if ity.Curkey == t_path[ix]
 		}
+	}
+	return
+}
+
+func (p *sxOrg) GetLstDepat(t_path string)(r_lst []string){
+	lst := strings.Split(t_path,cst_sep)
+	px := p.matchFater(lst);if px==nil{
+		return
+	}
+
+	util.L2I("%v",*px)
+	for _,itm:=range px.Child {
+		str := itm.Curkey//+" "+itm.Path+fmt.Sprintf(" %d",itm.Depth)
+		r_lst = append(r_lst,str)
+		//util.L2I(itm.string())
 	}
 	return
 }
@@ -395,7 +427,7 @@ func (p *sxOrg) insertChild(t_man *sxMan) {
 
 	var childx sxOrg
 	childx.Curkey = t_man.depart[p.Depth]
-	childx.Path, _ = t_man.getKeyPath(px.Depth)
+	childx.Path,childx.Curkey, _ = t_man.getKeyPath(px.Depth)
 	if childx.Path == p.Path {
 		if px.Path == t_man.Path {
 			px.Men = append(px.Men, *t_man)
@@ -407,6 +439,7 @@ func (p *sxOrg) insertChild(t_man *sxMan) {
 	}
 	childx.Depth = px.Depth + 1
 	px.Child = append(px.Child, &childx)
+	//util.L2I(childx.string())
 
 	childx.insertChild(t_man)
 }
