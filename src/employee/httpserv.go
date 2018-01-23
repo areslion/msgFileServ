@@ -38,7 +38,9 @@ func getMen(t_res http.ResponseWriter,t_ask *http.Request){
 func menChanged(t_res http.ResponseWriter,t_ask *http.Request){
 	util.L2I(t_ask.Method)
 
-	loadOrg()
+	if t_ask.Method=="POST"{
+		loadOrg()
+	}
 }
 
 func loadOrg(){
