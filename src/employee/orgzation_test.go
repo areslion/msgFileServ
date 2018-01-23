@@ -88,7 +88,7 @@ func Test_GetMsg(t *testing.T){
 		util.L2I("%d %s",ix,itm)
 	}
 
-	lst = orgx.GetLstDepat("楚雄供电局")
+	lst = orgx.GetLstDepat("楚雄供电局>物流服务中心")
 	for ix,itm := range lst{
 		util.L2I("%d %s",ix,itm)
 	}
