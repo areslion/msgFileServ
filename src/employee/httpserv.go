@@ -10,6 +10,7 @@ var m_lstMan sxManList
 func init(){
 	http.HandleFunc("/man/getDepart",getDepartment)
 	http.HandleFunc("/man/getMen",getMen)
+	http.HandleFunc("/man/MenChanged",menChanged)
 }
 
 func getDepartment(t_res http.ResponseWriter,t_ask *http.Request){
@@ -34,9 +35,23 @@ func getMen(t_res http.ResponseWriter,t_ask *http.Request){
 	}
 }
 
-func StartServ(){
+func menChanged(t_res http.ResponseWriter,t_ask *http.Request){
+	util.L2I(t_ask.Method)
+
+	loadOrg()
+}
+
+func loadOrg(){
+	m_lstMan.mapLstMan = m_lstMan.mapLstMan[0:0]
+	m_org.clear()
 	m_lstMan.readAllMan()
 	for _,itm := range m_lstMan.mapLstMan {
 		m_org.insertChild(&itm)
 	}
+
+	util.L2I("man info has bee re-load,num=%d",len(m_lstMan.mapLstMan))
+}
+
+func StartServ(){
+	loadOrg()
 }

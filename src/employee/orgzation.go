@@ -23,6 +23,7 @@ type sxDept map[string]sxPath
 type sxMan struct {
 	Path     string   `json:"path"`
 	Ukey     string   `json:"ukey"`
+	NumDev   string   `json:"devnum"`
 	Emial    string   `json:"email"`
 	Name     string   `json:"name"`
 	depart   []string `json:"depart"`
@@ -67,6 +68,7 @@ type sxRetJsMen struct {
 	Depth int `json:"depth"`
 	Lst []sxMan `json:"List"`
 }
+
 
 func (p *sxMan) getKeyPath(t_grad int) (s_ret,s_lst string, b_ret bool) {
 	if t_grad+1 > len(p.depart) {
@@ -168,13 +170,17 @@ func (p *sxManList) readAllMan() {
 	}
 	defer dbopt.Close()
 
-	dbopt.Sqlcmd = "SELECT pathx,ukey,email,namex,pwdlogin,gender,priviege FROM employee"
+	//dbopt.Sqlcmd = "SELECT pathx,ukey,email,namex,pwdlogin,gender,priviege FROM employee"
+	p.mapLstMan = p.mapLstMan[0:0]
+	dbopt.Sqlcmd = "SELECT a.pathx,a.ukey,a.email,a.namex,a.pwdlogin,a.gender,a.priviege,b.numDev "
+	dbopt.Sqlcmd += "FROM employee a LEFT JOIN terDevBasicInfo b "
+	dbopt.Sqlcmd += "ON a.ukey=b.numUsrKey"
 	if !dbopt.Query() {
 		return
 	}
 	for dbopt.Rows.Next() {
 		var ele sxMan
-		dbopt.Rows.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege)
+		dbopt.Rows.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege,&ele.NumDev)
 		ele.parse(">", true, p)
 		p.push(&ele)
 
@@ -217,6 +223,17 @@ func (p *sxManList) getDep(t_grade int) (r_key string, r_lst []string) {
 	}
 
 	return
+}
+
+
+func (p *sxOrg) clear(){
+	p.Brother = p.Brother[0:0]
+	p.Child = p.Child[0:0]
+	p.Curkey = ""
+	p.Depth = 0
+	p.dicKey = p.dicKey[0:0]
+	p.Men = p.Men[0:0]
+	p.Path = ""	
 }
 
 func (p *sxOrg) tstJson() {
@@ -396,6 +413,8 @@ func (p *sxOrg) toJson() (r_bts []byte, r_json string, b_ret bool) {
 	r_json = string(r_bts)
 	return
 }
+
+
 
 func (p *sxOrg) getAddr(t_path []string) (t_addr *sxOrg) {
 	var pathkey string
