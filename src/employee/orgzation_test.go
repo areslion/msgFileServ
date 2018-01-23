@@ -83,12 +83,16 @@ func Test_orgTree(t *testing.T){
 
 
 func Test_GetMsg(t *testing.T){
-	lst := orgx.GetLstDepat("")
+	lst,_ := orgx.GetLstDepat("")
 	for ix,itm := range lst{
 		util.L2I("%d %s",ix,itm)
 	}
 
-	lst = orgx.GetLstDepat("楚雄供电局>物流服务中心")
+	//var strIn string
+	//fmt.Println("输入部门名称:")
+	//fmt.Scanln(strIn)
+	lst,_ = orgx.GetLstDepat("楚雄供电局")
+	//lst = orgx.GetLstDepat(strIn)
 	for ix,itm := range lst{
 		util.L2I("%d %s",ix,itm)
 	}

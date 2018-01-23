@@ -1,6 +1,7 @@
 package util
 
 import (
+	"strings"
 	"fmt"
 	"log"
 	"os"
@@ -46,12 +47,16 @@ func (p *sxLog)createFile() {
 	}
 }
 
-func getFileStack(t_depth,t_garde int)(r_msg string){
+func getFileStack(t_depth,t_garde int)(r_msg,r_func string){
 	for ix:=0;ix<t_garde;ix++ {
-		_, file, line, _ := runtime.Caller(t_depth-ix)
+		pc, file, line, _ := runtime.Caller(t_depth-ix)
 		fname := GetFileName(file)
+		fx := runtime.FuncForPC(pc)
+		funcname := fx.Name()
+		lst := strings.Split(funcname,".")
 
-		r_msg += fmt.Sprintf("/%s:%d",fname,line)
+		r_msg += fmt.Sprintf("/%s %s:%d",funcname,fname,line)
+		r_func = lst[len(lst)-1]
 	}
 
 	return
@@ -61,12 +66,15 @@ func (p *sxLog) printx(t_tab string, format string, v ...interface{}) {
 	p.lckx.Lock()
 	defer p.lckx.Unlock()
 
-	_, file, line, _ := runtime.Caller(cst_depth)
+	pc, file, line, _ := runtime.Caller(cst_depth)
 	fname := GetFileName(file)
+	fx := runtime.FuncForPC(pc)
+	funname := fx.Name()
+	lst := strings.Split(funname,".")
 
 	var strMsg string
 	strtmx := time.Now().Format("2006-01-02 15:04:05")
-	strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s:%d", fname, line)
+	strMsg = fmt.Sprintf("["+t_tab+"] "+lst[len(lst)-1]+" "+format, v...) + fmt.Sprintf("  %s:%d",fname, line)
 	//strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s",getFileStack(4,4))
 	strF := strtmx + "  " + strMsg +"\r\n"
 	if (p.nOutObj & 0x01)>0 { log.Println(strMsg) }
@@ -89,7 +97,8 @@ func (p *sxLog) printEx(t_dep,t_grad int,t_tab string, format string, v ...inter
 	var strMsg string
 	strtmx := time.Now().Format("2006-01-02 15:04:05")
 	//strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s:%d", fname, line)
-	strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s",getFileStack(t_dep,t_grad))
+	strmsg,strFN:=getFileStack(t_dep,t_grad)
+	strMsg = fmt.Sprintf("["+t_tab+"] "+strFN+" "+format, v...) + fmt.Sprintf("  %s",strmsg)
 	strF := strtmx + "  " + strMsg +"\r\n"
 	if (p.nOutObj & 0x01)>0 { log.Println(strMsg) }
 	if (p.nOutObj & 0x02)>0 { 

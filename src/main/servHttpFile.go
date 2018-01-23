@@ -13,6 +13,7 @@ import (
 	"sync"
 )
 import (
+	"employee"
 	"httpserv/servMsg"
 	"httpserv/servFile"
 	"software"
@@ -69,6 +70,7 @@ func mutiRun() {
 
 	go servFile.StarFileServ()
 	go servMsg.StartServMsg(util.GetSftCfg())
+	go employee.StartServ()
 
 	wg.Wait()
 }
