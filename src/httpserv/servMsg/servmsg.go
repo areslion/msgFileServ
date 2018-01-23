@@ -484,10 +484,10 @@ func updateSendStatus(t_tskid, t_usrid string, t_status int) (r_OK, r_KO int, b_
 		return
 	}
 
-	if statusOld == cst_tsks_4f && t_status == cst_tsks_3e {
+	if (statusOld == cst_tsks_4f || statusOld == cst_tsks_21c) && t_status == cst_tsks_3e {
 		r_OK = 1
 		r_KO = -1
-	} else if t_status == cst_tsks_4f {
+	} else if t_status == cst_tsks_4f||t_status ==cst_tsks_22i  {
 		r_OK = 0
 		r_KO = 1
 	} else {
