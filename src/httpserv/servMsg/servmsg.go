@@ -21,12 +21,14 @@ const (
 	cst_tsks_2r = 0x0002 //客户端收到任务消息
 	cst_tsks_3e = 0x0004 //客户端执行成功
 	cst_tsks_4f = 0x0008 //客户端执行失败
+	cst_tsks_21c = 0x0010 //客户取消执行
+	cst_tsks_22i = 0x0020 //消息过期未执行
 
 	cst_fix_desc      = "Desc.json"
 	cst_prefix_getfil = "/msgfile/getfile/"
 )
 
-var cst_tsksArr = [...]int{cst_tsks_1u, cst_tsks_2r, cst_tsks_3e, cst_tsks_4f}
+var cst_tsksArr = [...]int{cst_tsks_1u, cst_tsks_2r, cst_tsks_3e, cst_tsks_4f,cst_tsks_21c,cst_tsks_22i}
 
 
 
@@ -100,32 +102,32 @@ var m_cfg *util.SxCfgAll
 
 func delMsg(t_msgid string) (b_ret bool) {
 	if len(t_msgid) != 36 {
-		util.L3E("delMsg invalid msgid(%s=%d)", t_msgid, len(t_msgid))
+		util.L4E("delMsg invalid msgid(%s=%d)", t_msgid, len(t_msgid))
 		return
 	}
 
 	dbopt,bret := dbbase.NewSxDB(&m_cfg.Db,"delMsg");if !bret {return}
 	defer dbopt.Close()
 
-	util.L2I("delMsg start to delete msg " + t_msgid)
+	util.L3I("delMsg start to delete msg " + t_msgid)
 	folder := m_cfg.ServFile.PathMsg + util.GetOSSeptor() + t_msgid
 	if util.IsExists(folder) {
 		err := os.RemoveAll(folder)
 		if err != nil {
-			util.L3E("delMsg os.RemoveAll(%s) %s", folder, err.Error())
+			util.L4E("delMsg os.RemoveAll(%s) %s", folder, err.Error())
 			return
 		} else {
-			util.L2I("delMsg foler %s removed", folder)
+			util.L3I("delMsg foler %s removed", folder)
 		}
 	}
 
 	dbopt.Sqlcmd = "DELETE FROM msgAbstract WHERE numMsg=?"
 	if !dbopt.Exc(t_msgid){return}
-	util.L2I("delMsg deleted %s form msgAbstract %d",t_msgid,dbopt.Affected())
+	util.L3I("delMsg deleted %s form msgAbstract %d",t_msgid,dbopt.Affected())
 
 	dbopt.Sqlcmd = "DELETE FROM msgSend WHERE numMsg=?"
 	if !dbopt.Exc(t_msgid) {return}
-	util.L2I("delMsg deleted %s form msgSend %d",t_msgid,dbopt.Affected())
+	util.L3I("delMsg deleted %s form msgSend %d",t_msgid,dbopt.Affected())
 
 	b_ret = true
 	return
@@ -153,22 +155,22 @@ func getAdminMsg(t_page, t_limit string) (r_bts []byte, b_ret bool) {
 		dbopt.Rows.Scan(&resMsg.Totalnum, &ele.Name, &ele.Tmx, &ele.Tmy, &ele.Numsend, &ele.NumOK, &ele.NumKO,&ele.Guid,&ele.Os)
 		resMsg.Lst = append(resMsg.Lst, ele)
 
-		util.L2I(fmt.Sprintf("%v", ele))
+		util.L3I(fmt.Sprintf("%v", ele))
 	}
 	bts, err := json.Marshal(resMsg)
 	if err != nil {
-		util.L3E("getAdminMsg json.Marshal(resMsg)" + err.Error())
+		util.L4E("getAdminMsg json.Marshal(resMsg)" + err.Error())
 		return
 	}
 	r_bts = bts
 
 	b_ret = true
-	util.L2I("getAdminMsg " + "(" + fmt.Sprintf("toatl=%d  %d/(Limit %d %d) %d", resMsg.Totalnum, resMsg.Page, resMsg.Page, resMsg.Limit, len(resMsg.Lst)) + ")")
+	util.L3I("getAdminMsg " + "(" + fmt.Sprintf("toatl=%d  %d/(Limit %d %d) %d", resMsg.Totalnum, resMsg.Page, resMsg.Page, resMsg.Limit, len(resMsg.Lst)) + ")")
 
 	return
 }
 
-func getUsrMsg(t_id, t_page, t_limit, t_status string) (r_bts []byte, b_ret bool) {
+func getUsrMsg(t_id, t_page, t_limit, t_status,t_tmx string) (r_bts []byte, b_ret bool) {
 	dbopt,bret:=dbbase.NewSxDB(&m_cfg.Db,"getUsrMsg") ; if !bret {return}
 	defer dbopt.Close()
 
@@ -187,23 +189,22 @@ func getUsrMsg(t_id, t_page, t_limit, t_status string) (r_bts []byte, b_ret bool
 			num++
 		}
 	}
-	fx(cst_tsks_3e)
-	fx(cst_tsks_4f)
-	fx(cst_tsks_2r)
-	fx(cst_tsks_1u)
+
+	for _,itm :=range cst_tsksArr {fx(itm)}
 	if len(strFlag) > 0 {
 		strFlag = "numReciever=" + "'" + t_id + "'" + " AND " + "(" + strFlag + ") "
 	} else {
 		strFlag = "numReciever=" + "'" + t_id + "'"
 	}
+	if len(t_tmx)>0 {strFlag += " AND tmy>=? "}
 
 	dbopt.Sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE " + strFlag + ")num,namex,statusx,tmx,tmy,tmExc,descx "
 	dbopt.Sqlcmd += "FROM msgSend "
 	dbopt.Sqlcmd += "WHERE " + strFlag
 	dbopt.Sqlcmd += "LIMIT ?,? "
 
-	util.L1T(dbopt.Sqlcmd)
-	if !dbopt.Query(npage*nlimit, t_limit){return}
+	util.L2D(dbopt.Sqlcmd)
+	if !dbopt.Query(t_tmx,t_tmx,npage*nlimit, t_limit){return}
 
 	var resMsg sxMsgAskRes
 	resMsg.Page = npage
@@ -219,13 +220,13 @@ func getUsrMsg(t_id, t_page, t_limit, t_status string) (r_bts []byte, b_ret bool
 	}
 	bts, err := json.Marshal(resMsg)
 	if err != nil {
-		util.L3E("getUsrMsg json.Marshal(resMsg)" + err.Error())
+		util.L4E("getUsrMsg json.Marshal(resMsg)" + err.Error())
 		return
 	}
 	r_bts = bts
 
 	b_ret = true
-	util.L2I("getUsrMsg %s(toatl=%d  %d/(Limit %d %d) %d",t_id,resMsg.Totalnum, resMsg.Page, resMsg.Page, resMsg.Limit, len(resMsg.Lst))
+	util.L3I("getUsrMsg %s(toatl=%d  %d/(Limit %d %d) %d",t_id,resMsg.Totalnum, resMsg.Page, resMsg.Page, resMsg.Limit, len(resMsg.Lst))
 
 	return
 }
@@ -235,7 +236,7 @@ func getOneTskDetail(t_msgid string) (r_bts []byte, b_ret bool) {
 
 	bts, err := ioutil.ReadFile(path)
 	if err != nil {
-		util.L3E(fmt.Sprintf("getOneTsk ioutil.ReadFile %s failed %s", path, err.Error()))
+		util.L4E(fmt.Sprintf("getOneTsk ioutil.ReadFile %s failed %s", path, err.Error()))
 		return
 	}
 
@@ -245,7 +246,7 @@ func getOneTskDetail(t_msgid string) (r_bts []byte, b_ret bool) {
 	util.L1T("getOneTskDetail "+btstrnew)
 	r_bts = []byte(btstrnew)
 	b_ret = true
-	util.L2I("getOneTsk " + t_msgid + " OK")
+	util.L3I("getOneTsk " + t_msgid + " OK")
 	return
 }
 
@@ -262,7 +263,7 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 	dbopt.Sqlcmd =  "SELECT namex,numSent,numSentOK,numSentKO,descx FROM msgAbstract WHERE numMsg=? " 
 	if !dbopt.Query(t_tsk) {return}
 	if dbopt.Rows.Next() {dbopt.Rows.Scan(&sdx.Name,&sdx.NAll,&sdx.NOK,&sdx.NKO,&sdx.Detail)} else {
-		util.L3E("getOneTskSendDetail fail to get task %s",t_tsk)
+		util.L4E("getOneTskSendDetail fail to get task %s",t_tsk)
 		return
 	}
 
@@ -278,12 +279,12 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 	sdx.Limit = t_limit
 	sdx.Page = t_page
 	r_bts,err = json.Marshal(&sdx);if err!=nil {
-		util.L3E("getOneTskSendDetail json.Marshal(&sdx) %s",err.Error())
+		util.L4E("getOneTskSendDetail json.Marshal(&sdx) %s",err.Error())
 		return
 	}
 
 	b_ret = true
-	util.L2I("getOneTskSendDetail (page%d/%d res=%d/%d)",t_page,t_limit,sdx.NAll,sdx.Totalnum)
+	util.L3I("getOneTskSendDetail (page%d/%d res=%d/%d)",t_page,t_limit,sdx.NAll,sdx.Totalnum)
 	return
 }
 
@@ -298,7 +299,7 @@ func insertDBBytes(t_bts []byte) (r_id string, r_ret bool) {
 	var msgx *sxMsg
 	msgx, r_ret = parseJson(t_bts)
 	if r_ret == false {
-		util.L3E("insertDBBytes fail to parseJson")
+		util.L4E("insertDBBytes fail to parseJson")
 		return
 	}
 
@@ -306,7 +307,7 @@ func insertDBBytes(t_bts []byte) (r_id string, r_ret bool) {
 
 	for ix, _ := range msgx.Attach {
 		msgx.Attach[ix].Url = cst_prefix_getfil + "/" + msgx.Guid + "/" + msgx.Attach[ix].Name
-		util.L2I("insertDBBytes Url=" + msgx.Attach[ix].Url)
+		util.L3I("insertDBBytes Url=" + msgx.Attach[ix].Url)
 	}
 	r_ret = insertDB(msgx)
 
@@ -342,7 +343,7 @@ func insertAbstract(t_msg *sxMsg) (b_ret bool) {
 	if !dbopt.Exc(px.Guid, px.Name, px.Tmx, px.Tmy, tmNow, px.Os, px.Auto, px.Popup, px.Sender, len(px.Reciever), px.Desc){return}
 
 	b_ret = true
-	util.L2I("insertAbstract add a msg task %s %s",t_msg.Guid,t_msg.Name)
+	util.L3I("insertAbstract add a msg task %s %s",t_msg.Guid,t_msg.Name)
 	return
 }
 
@@ -358,7 +359,7 @@ func insertSender(t_msg *sxMsg) (b_ret bool) {
 
 	for ix, item := range t_msg.Reciever {
 		if len(item.Guid) != 32 {
-			util.L3E("insertSender invalid receivere=" + item.Guid)
+			util.L4E("insertSender invalid receivere=" + item.Guid)
 			continue
 		}
 		if !dbopt.ExcAlone(px.Guid, item.Guid, tmNow, px.Tmx, px.Tmy, px.Name, px.Desc) {return}
@@ -366,7 +367,7 @@ func insertSender(t_msg *sxMsg) (b_ret bool) {
 	}
 
 	b_ret = true
-	util.L2I("insertSender add a msg %s %s to usr=%d",t_msg.Guid,t_msg.Name, len(px.Reciever))
+	util.L3I("insertSender add a msg %s %s to usr=%d",t_msg.Guid,t_msg.Name, len(px.Reciever))
 	return
 }
 
@@ -374,7 +375,7 @@ func parseJson(t_bts []byte) (r_msg *sxMsg, b_ret bool) {
 	r_msg = new(sxMsg)
 	err := json.Unmarshal(t_bts, r_msg)
 	if err != nil {
-		util.L3E("parseJson  " + err.Error())
+		util.L4E("parseJson  " + err.Error())
 		return
 	} else {
 		b_ret = true
@@ -461,7 +462,7 @@ func updateSendStatus(t_tskid, t_usrid string, t_status int) (r_OK, r_KO int, b_
 		}
 	}
 	if bvalid == false {
-		util.L3E("updateSendStatus invalid status (%s %s %d)",t_tskid, t_usrid, t_status)
+		util.L4E("updateSendStatus invalid status (%s %s %d)",t_tskid, t_usrid, t_status)
 		return
 	}
 
@@ -470,16 +471,16 @@ func updateSendStatus(t_tskid, t_usrid string, t_status int) (r_OK, r_KO int, b_
 	dbopt.Sqlcmd = "SELECT statusx FROM msgSend WHERE numMsg=? AND numReciever=? "
 	if !dbopt.Query(t_tskid, t_usrid) {return}
 	if dbopt.Rows.Next() { dbopt.Rows.Scan(&statusOld) } else {
-		util.L3E("updateSendStatus smt.Query(%s) failed", dbopt.Sqlcmd)
+		util.L4E("updateSendStatus smt.Query(%s) failed", dbopt.Sqlcmd)
 		return
 	}
 
 	if t_status <= cst_tsks_1u {
-		util.L2I("updateSendStatus invalid status(%s.%s %d)", t_usrid, t_tskid, statusOld)
+		util.L3I("updateSendStatus invalid status(%s.%s %d)", t_usrid, t_tskid, statusOld)
 		return
 	}
 	if statusOld == cst_tsks_3e {
-		util.L2I("updateSendStatus has been set as(%s.%s %d)", t_usrid, t_tskid, statusOld)
+		util.L3I("updateSendStatus has been set as(%s.%s %d)", t_usrid, t_tskid, statusOld)
 		return
 	}
 
@@ -498,12 +499,12 @@ func updateSendStatus(t_tskid, t_usrid string, t_status int) (r_OK, r_KO int, b_
 
 	affcted := dbopt.Affected()
 	if affcted < 1 {
-		util.L3E(fmt.Sprintf("updateUsrTsk RowsAffected()=%d no relative record(dev=%s tsk=%s) find", affcted, t_usrid, t_tskid))
+		util.L4E(fmt.Sprintf("updateUsrTsk RowsAffected()=%d no relative record(dev=%s tsk=%s) find", affcted, t_usrid, t_tskid))
 		return
 	}
 
 	b_ret = true
-	util.L2I("updateSendStatus OK dev=%s tsk=%s status=%d affcted=%d",t_usrid,t_tskid, t_status, affcted)
+	util.L3I("updateSendStatus OK dev=%s tsk=%s status=%d affcted=%d",t_usrid,t_tskid, t_status, affcted)
 
 	return
 }
@@ -516,12 +517,12 @@ func updateAbstractNum(t_tskid string, t_OK, t_KO int) (b_ret bool) {
 	if !dbopt.Exc(t_OK, t_KO, t_tskid) {return}
 	affcted := dbopt.Affected()
 	if affcted < 1 {
-		util.L3E("updateAbstractNum RowsAffected()=%d no relative record(tsk=%s nOK=%d nKO=%d) update", affcted, t_tskid, t_OK, t_KO)
+		util.L4E("updateAbstractNum RowsAffected()=%d no relative record(tsk=%s nOK=%d nKO=%d) update", affcted, t_tskid, t_OK, t_KO)
 		return
 	}
 
 	b_ret = true
-	util.L2I("updateAbstractNum OK tsk=%s affcted=%d nOK=%d nKO=%d", t_tskid, affcted, t_OK, t_KO)
+	util.L3I("updateAbstractNum OK tsk=%s affcted=%d nOK=%d nKO=%d", t_tskid, affcted, t_OK, t_KO)
 
 	return
 }

@@ -7,9 +7,9 @@ import (
 
 var manlst sxManList
 func Test_readAllMan(t *testing.T){
-	util.L2I("Start unit test")
+	util.L3I("Start unit test")
 	manlst.readAllMan()
-	util.L2I("%d\n\n",util.SizeStruct(manlst))
+	util.L3I("%d\n\n",util.SizeStruct(manlst))
 }
 
 func Test_getDep(t *testing.T){
@@ -62,12 +62,12 @@ func Test_getDep(t *testing.T){
 
 	
 	bts,_,_:=orx.toJson()
-	util.L2I(string(bts))
+	util.L3I(string(bts))
 
 
 	lst := orx.GetLstDepat("n"+cst_sep+"x"+cst_sep+"b")
 	for ix,itm := range lst{
-		util.L2I("%d %s",ix,itm)
+		util.L3I("%d %s",ix,itm)
 	}
 }
 
@@ -85,7 +85,7 @@ func Test_orgTree(t *testing.T){
 func Test_GetMsg(t *testing.T){
 	lst,_ := orgx.GetLstDepat("")
 	for ix,itm := range lst{
-		util.L2I("%d %s",ix,itm)
+		util.L3I("%d %s",ix,itm)
 	}
 
 	//var strIn string
@@ -94,6 +94,6 @@ func Test_GetMsg(t *testing.T){
 	lst,_ = orgx.GetLstDepat("楚雄供电局")
 	//lst = orgx.GetLstDepat(strIn)
 	for ix,itm := range lst{
-		util.L2I("%d %s",ix,itm)
+		util.L3I("%d %s",ix,itm)
 	}
 }

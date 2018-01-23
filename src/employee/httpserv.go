@@ -14,7 +14,7 @@ func init(){
 }
 
 func getDepartment(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I(t_ask.Method)
+	util.L3I(t_ask.Method)
 
 	if t_ask.Method=="GET"{
 		strPath:= t_ask.FormValue("path")
@@ -25,7 +25,7 @@ func getDepartment(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 func getMen(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I(t_ask.Method)
+	util.L3I(t_ask.Method)
 
 	if t_ask.Method=="GET"{
 		strPath:= t_ask.FormValue("path")
@@ -36,7 +36,7 @@ func getMen(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 func menChanged(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I(t_ask.Method)
+	util.L3I(t_ask.Method)
 
 	if t_ask.Method=="POST"{
 		loadOrg()
@@ -51,7 +51,7 @@ func loadOrg(){
 		m_org.insertChild(&itm)
 	}
 
-	util.L2I("man info has bee re-load,num=%d",len(m_lstMan.mapLstMan))
+	util.L3I("man info has bee re-load,num=%d",len(m_lstMan.mapLstMan))
 }
 
 func StartServ(){

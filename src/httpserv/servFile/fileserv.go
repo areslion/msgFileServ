@@ -34,9 +34,9 @@ func delApp(t_res http.ResponseWriter, t_ask *http.Request) {
 						log.Println("remove folder ", sft.GetFolderPath(software.CfgSft, true))
 						bDel = software.DelSft(sft)
 						if bDel {
-							util.L2I(sftDel.Mx() + " removed successfully")
+							util.L3I(sftDel.Mx() + " removed successfully")
 						} else {
-							util.L3E(sftDel.Mx() + " removed faild")
+							util.L4E(sftDel.Mx() + " removed faild")
 						}
 
 					} else {
@@ -46,14 +46,14 @@ func delApp(t_res http.ResponseWriter, t_ask *http.Request) {
 					log.Println(sftDel.Mx() + " is not exist in server")
 				}
 			} else {
-				util.L4F("Fail to parse json " + err.Error() + "  " + string(bts))
+				util.L5F("Fail to parse json " + err.Error() + "  " + string(bts))
 				var sftx software.SxSftDel
 				sftx.NamexA = "tst1"
 				sftx.Md5x = "123abc"
 
 				jx, _ := json.Marshal(sftx)
-				util.L2I("C---" + string(bts))
-				util.L2I("S---" + string(jx))
+				util.L3I("C---" + string(bts))
+				util.L3I("S---" + string(jx))
 			}
 
 			if bDel == true {
@@ -62,24 +62,24 @@ func delApp(t_res http.ResponseWriter, t_ask *http.Request) {
 				nret = http.StatusInternalServerError
 			}
 
-			util.L2I("DelApp res=" + fmt.Sprintf("%d", nret))
+			util.L3I("DelApp res=" + fmt.Sprintf("%d", nret))
 			//http.Redirect(t_res,t_ask,"./View?id=",nret)
 		} else {
-			util.L3E("fail to read body data  " + err.Error())
+			util.L4E("fail to read body data  " + err.Error())
 		}
 	} else {
-		util.L3E("DelApp  undefined method=" + t_ask.Method)
+		util.L4E("DelApp  undefined method=" + t_ask.Method)
 	}
 }
 
 func downFileHandler(t_res http.ResponseWriter, t_ask *http.Request) {
-	util.L2I("downFileHandler %s",t_ask.Method)
+	util.L3I("downFileHandler %s",t_ask.Method)
 	
 	if t_ask.Method=="GET" {util.NewFileServ(t_ask,&t_res,software.CfgSft.ServFile.PathSft)}
 }
 
 func getlstApp(t_res http.ResponseWriter, t_ask *http.Request) {
-	util.L2I("GetlstApp called")
+	util.L3I("GetlstApp called")
 
 	if t_ask.Method == "GET" {
 		_, strJson, _ := software.GetSftLst()
@@ -112,19 +112,19 @@ func parseAsk(t_ask *http.Request) bool {
 		}
 	}
 
-	util.L2I("Upload sft " + sft.Msgx())
+	util.L3I("Upload sft " + sft.Msgx())
 	sft.FolderID, bfileSave = software.InsertDB(&sft, software.M_dbCfg)
 	if buf.Len() > 0 {
 		if bfileSave {
 			_, bfileSave = saveFileBytes(&sft, buf.Bytes())
 			if bfileSave {
-				util.L2I("Upload sft " + sft.Msgx() + " successfully")
+				util.L3I("Upload sft " + sft.Msgx() + " successfully")
 			} else {
-				util.L3E("Upload sft " + sft.Msgx() + " failed")
+				util.L4E("Upload sft " + sft.Msgx() + " failed")
 			}
 
 		} else {
-			util.L4F("Upload sft " + sft.Msgx() + " Insert into db failed")
+			util.L5F("Upload sft " + sft.Msgx() + " Insert into db failed")
 		}
 	}
 
@@ -157,7 +157,7 @@ func StarFileServ() {
 }
 
 func upload(t_res http.ResponseWriter, t_ask *http.Request) {
-	util.L2I(t_ask.Method)
+	util.L3I(t_ask.Method)
 	if t_ask.Method == "POST" {
 
 		var nret int
@@ -167,7 +167,7 @@ func upload(t_res http.ResponseWriter, t_ask *http.Request) {
 			nret = http.StatusInternalServerError
 		}
 
-		util.L2I("upload res=" + fmt.Sprintf("%d", nret))
+		util.L3I("upload res=" + fmt.Sprintf("%d", nret))
 		//http.Redirect(t_res, t_ask, "./View?id=", nret)
 	}
 }

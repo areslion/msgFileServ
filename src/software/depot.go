@@ -74,7 +74,7 @@ func (p *SxSoft) Set(t_part *multipart.Part) bool {
 	} else if t_part.FormName() == cst_7md5 {
 		p.Md5x = valx
 	} else {
-		util.L3E("SxSoft  undefed part " + t_part.FormName())
+		util.L4E("SxSoft  undefed part " + t_part.FormName())
 		return false
 	}
 	return true
@@ -186,7 +186,7 @@ func DelSft(t_sft *SxSoft) (b_ret bool) {
 	if !dbopt.Exc(t_sft.Namexa){return}
 
 	b_ret = true
-	util.L2I("software %s %s deleted",t_sft.Namexa,t_sft.FolderID)
+	util.L3I("software %s %s deleted",t_sft.Namexa,t_sft.FolderID)
 	return true
 }
 
@@ -219,7 +219,7 @@ func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
 	jx, _ := json.Marshal(lstar)
 	r_json = "{\"repoAppList\":" + string(jx) + "}"
 
-	util.L4F("GetSft num=" + fmt.Sprintf("%v", len(lstar)))
+	util.L5F("GetSft num=" + fmt.Sprintf("%v", len(lstar)))
 	b_ret = true
 	return
 }

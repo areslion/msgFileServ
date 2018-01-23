@@ -34,7 +34,7 @@ func init(){
 }
 
 func admget(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I("admget %s",t_ask.Method)
+	util.L3I("admget %s",t_ask.Method)
 
 	bret := false
 	if t_ask.Method == "GET" {
@@ -53,7 +53,7 @@ func admget(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 func delmsgfile(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I("delmsgfile %s %s",t_ask.Method,t_ask.URL.Path)
+	util.L3I("delmsgfile %s %s",t_ask.Method,t_ask.URL.Path)
 
 	bret := false
 	tskid := t_ask.FormValue("task")
@@ -62,7 +62,7 @@ func delmsgfile(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 func gettsk(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I("gettsk called "+t_ask.Method)
+	util.L3I("gettsk called "+t_ask.Method)
 
 	bret := false
 	if t_ask.Method =="GET"{
@@ -79,22 +79,22 @@ func gettsk(t_res http.ResponseWriter,t_ask *http.Request){
 
 func getsendlst(t_res http.ResponseWriter,t_ask *http.Request){
 	numCallTst++
-	util.L2I("getsendlst called %s %d",t_ask.Method,numCallTst)
+	util.L3I("getsendlst called %s %d",t_ask.Method,numCallTst)
 
 	bret := false
 	if t_ask.Method =="GET"{
 		tskid := t_ask.FormValue("task");if len(tskid)!=36 {
-			util.L3E("getsendlst invalid task guid %s",tskid)
+			util.L4E("getsendlst invalid task guid %s",tskid)
 			t_res.WriteHeader(http.StatusNotAcceptable)
 			return
 		}
 		page ,err:= strconv.Atoi(t_ask.FormValue("page"));if err!=nil{
-			util.L3E("getsendlst strconv.Atoi(page) %s",err.Error())
+			util.L4E("getsendlst strconv.Atoi(page) %s",err.Error())
 			t_res.WriteHeader(http.StatusNotAcceptable)
 			return
 		}
 		limit,err := strconv.Atoi(t_ask.FormValue("limit"));if err!=nil{
-			util.L3E("getsendlst strconv.Atoi(limit)",err.Error())
+			util.L4E("getsendlst strconv.Atoi(limit)",err.Error())
 			t_res.WriteHeader(http.StatusNotAcceptable)
 			return
 		}
@@ -110,7 +110,7 @@ func getsendlst(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 func getfile(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I("getfile called "+t_ask.Method)
+	util.L3I("getfile called "+t_ask.Method)
 
 	if t_ask.Method=="GET" {
 		util.NewFileServ(t_ask,&t_res,m_cfg.ServFile.PathMsg)
@@ -118,7 +118,7 @@ func getfile(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 func newmsg(t_res http.ResponseWriter, t_ask *http.Request) {
-	util.L2I("/msgfile/newmsg called "+t_ask.Method)
+	util.L3I("/msgfile/newmsg called "+t_ask.Method)
 	bret := false
 	if t_ask.Method =="POST" {
 		bret = parseAsk(t_ask)
@@ -158,7 +158,7 @@ func parseAsk(t_ask *http.Request) (r_ret bool) {
 
 		}
 	} else {
-		util.L3E("parseAsk %s",_err.Error())
+		util.L4E("parseAsk %s",_err.Error())
 	}
 
 	if bDesc {
@@ -178,7 +178,7 @@ func parseAsk(t_ask *http.Request) (r_ret bool) {
 }
 
 func usrget(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I(t_ask.Method)
+	util.L3I(t_ask.Method)
 
 	bret := false
 	if t_ask.Method == "GET" {
@@ -186,9 +186,10 @@ func usrget(t_res http.ResponseWriter,t_ask *http.Request){
 		npage := t_ask.FormValue("page")
 		nlimt := t_ask.FormValue("limit")
 		nstatu := t_ask.FormValue("status")
+		tmx := t_ask.FormValue("time")
 
 		var bts []byte
-		bts ,bret= getUsrMsg(idx,npage,nlimt,nstatu)
+		bts ,bret= getUsrMsg(idx,npage,nlimt,nstatu,tmx)
 		t_res.Header().Set("Content-Type", "application/json; charset=utf-8")
 		t_res.Write(bts)
 	}
@@ -196,22 +197,22 @@ func usrget(t_res http.ResponseWriter,t_ask *http.Request){
 
 
 
-	// util.L2I(fmt.Sprintf("%v",t_ask.URL))
+	// util.L3I(fmt.Sprintf("%v",t_ask.URL))
 
 	// urlRes,_ := url.Parse(t_ask.RequestURI)
-	// util.L2I(fmt.Sprintf("%v",urlRes))
+	// util.L3I(fmt.Sprintf("%v",urlRes))
 
 	// urlV := urlRes.Query()
-	// util.L2I(fmt.Sprintf("%v",urlV))
+	// util.L3I(fmt.Sprintf("%v",urlV))
 	// for ix,itm := range urlV {
-	// 	util.L2I(fmt.Sprintf("%v  %v",ix,itm))
+	// 	util.L3I(fmt.Sprintf("%v  %v",ix,itm))
 	// }
 
 	// log.Println(t_ask.FormValue("name2"))
 }
 
 func usrupdate(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L2I("usrupdate "+t_ask.Method)
+	util.L3I("usrupdate "+t_ask.Method)
 
 	bret := false
 	if t_ask.Method == "POST" {
@@ -219,7 +220,7 @@ func usrupdate(t_res http.ResponseWriter,t_ask *http.Request){
 		dev := t_ask.FormValue("dev")
 		statux,_ := strconv.Atoi(t_ask.FormValue("status"))
 
-		util.L2I("usrupdate (task=%s dev=%s status=%d)",tsk,dev,statux)
+		util.L3I("usrupdate (task=%s dev=%s status=%d)",tsk,dev,statux)
 		bret = updateUsrTsk(tsk,dev,statux)
 	}
 	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}

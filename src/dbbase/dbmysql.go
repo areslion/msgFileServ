@@ -115,7 +115,7 @@ func (p *sxDB) PrePare() (b_ret bool) {
 }
 func (p *sxDB) logF(t_fmt string,v...interface{}){
 	fmtx := fmt.Sprintf("sxDB(%s) %s",p.tag,t_fmt)
-	util.L4Fx(5,2,fmtx,v...)
+	util.L5Fx(5,2,fmtx,v...)
 }
 
 func (p *SCfg) Init(t_ip, t_usr, t_pwd, t_db, t_cset string) {
@@ -141,7 +141,7 @@ func Open(cfg *util.SxCfgAll) (r_cnt *sql.DB, r_res bool) {
 
 	cnn, err := sql.Open("mysql", m_cfgdb.Db.GetCntStr())
 	if err != nil {
-		util.L4F("Fail to open db " + err.Error() + " " + m_cfgdb.Db.GetCntStr())
+		util.L5F("Fail to open db " + err.Error() + " " + m_cfgdb.Db.GetCntStr())
 		return
 	}
 	r_cnt = cnn

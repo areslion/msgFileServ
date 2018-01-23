@@ -33,7 +33,6 @@ type sxMan struct {
 	Priviege int `json:"privilege"`
 
 	brother []sxMan
-	child   *[]sxMan
 }
 
 type sxManList struct {
@@ -154,7 +153,7 @@ func (p *sxMan) parse(t_sep string, t_LtoR bool, t_lst *sxManList) {
 			elex[itm] = strNext
 			t_lst.lstKeyDep[ix][keyx] = elex
 		}
-		//util.L2I("%s %s    %v",p.path, keyx,elex)
+		//util.L3I("%s %s    %v",p.path, keyx,elex)
 	}
 }
 
@@ -190,7 +189,7 @@ func (p *sxManList) readAllMan() {
 	}
 
 	// for ix, item := range p.mapLstDep {
-	// 	util.L2I("%d %d %v", ix, len(item), item)
+	// 	util.L3I("%d %d %v", ix, len(item), item)
 	// }
 
 	for ix := 0; ix < 5; ix++ {
@@ -199,16 +198,16 @@ func (p *sxManList) readAllMan() {
 			p.lstDep = append(p.lstDep, lst)
 		}
 
-		//util.L2I("%d %d %v",ix,len(lst),lst)
+		//util.L3I("%d %d %v",ix,len(lst),lst)
 	}
 
 	// for ix,_:=range p.lstDep {
-	// 	util.L2I("%d %d %v",ix,len(p.lstDep[ix]),p.lstDep[ix])
+	// 	util.L3I("%d %d %v",ix,len(p.lstDep[ix]),p.lstDep[ix])
 	// }
 }
 
 func (p *sxManList) getDep(t_grade int) (r_key string, r_lst []string) {
-	//util.L2I("getDep %d %d",t_grade ,len(p.mapLstDep))
+	//util.L3I("getDep %d %d",t_grade ,len(p.mapLstDep))
 	if t_grade+1 > len(p.mapLstDep) {
 		return
 	}
@@ -269,10 +268,10 @@ func (p *sxOrg) tstJson() {
 	root.Child = append(root.Child, &c2)
 	bts, err := json.Marshal(&root)
 	if err != nil {
-		util.L2I("json.Marshal(&root) %s", err.Error())
+		util.L3I("json.Marshal(&root) %s", err.Error())
 		return
 	}
-	util.L2I(string(bts))
+	util.L3I(string(bts))
 
 	root.itorx()
 
@@ -296,7 +295,7 @@ func (p *sxOrg) tstJson() {
 		}
 	}
 
-	util.L2I("Final %d %s %s", final.Depth, final.Path, final.Curkey)
+	util.L3I("Final %d %s %s", final.Depth, final.Path, final.Curkey)
 
 	bx := false
 	for ix, _ := range final.Brother {
@@ -315,7 +314,7 @@ func (p *sxOrg) tstJson() {
 }
 
 func (p *sxOrg) itorx() {
-	util.L2I("%d %s %s ", p.Depth, p.Curkey, p.Path)
+	util.L3I("%d %s %s ", p.Depth, p.Curkey, p.Path)
 	for ix, _ := range p.Brother {
 		p.Brother[ix].itorx()
 	}
@@ -357,7 +356,7 @@ func (p *sxOrg) matchFater(t_path []string) (r_fater *sxOrg) {
 		}
 	}
 	for ix := 0; ix < p.Depth; ix++ {
-		//util.L2I("%d %d %d",ix,p.Depth,len(t_path))
+		//util.L3I("%d %d %d",ix,p.Depth,len(t_path))
 		if ix == 0 {
 			cuKey = cuKey + t_path[ix]
 		} else {
@@ -405,7 +404,7 @@ func (p *sxOrg) toJson() (r_bts []byte, r_json string, b_ret bool) {
 	var err error
 	r_bts, err = json.Marshal(p)
 	if err != nil {
-		util.L3E("sxOrg toJson Marshal" + err.Error())
+		util.L4E("sxOrg toJson Marshal" + err.Error())
 		return
 	}
 
@@ -434,7 +433,7 @@ func (p *sxOrg) getAddr(t_path []string) (t_addr *sxOrg) {
 }
 
 func (p *sxOrg) GetLstDepat(t_path,t_sep string)(r_lst []string,r_json string){
-	util.L2I("get "+t_path+" sep="+t_sep)
+	util.L3I("get "+t_path+" sep="+t_sep)
 	lst := strings.Split(t_path,t_sep)
 	px := p.matchFater(lst);if px==nil{
 		return
@@ -444,13 +443,13 @@ func (p *sxOrg) GetLstDepat(t_path,t_sep string)(r_lst []string,r_json string){
 	for _,itm:=range px.Child {
 		str := itm.Curkey//+" "+itm.Path+fmt.Sprintf(" %d",itm.Depth)
 		r_lst = append(r_lst,str)		
-		//util.L2I(itm.string())
+		//util.L3I(itm.string())
 	}
 
 	var depx sxRetJsDep
 	depx.Lst = r_lst;depx.Num = len(r_lst);	depx.Depth = px.Depth;depx.Path = t_path
 	bts,err:=json.Marshal(&depx);if err!=nil{
-		util.L3E("json.Marshal(&depx) "+err.Error())
+		util.L4E("json.Marshal(&depx) "+err.Error())
 		return
 	}
 	r_json = string(bts)
@@ -460,10 +459,10 @@ func (p *sxOrg) GetLstDepat(t_path,t_sep string)(r_lst []string,r_json string){
 }
 
 func (p *sxOrg) GetLstMan(t_path,t_sep string)(r_lst []sxMan,r_json []byte){
-	util.L2I("get "+t_path+" sep="+t_sep)
+	util.L3I("get "+t_path+" sep="+t_sep)
 	lst := strings.Split(t_path,t_sep)
 	px := p.matchFater(lst);if px==nil{
-		util.L2I("find nothing")
+		util.L3I("find nothing")
 		return
 	}
 
@@ -476,11 +475,11 @@ func (p *sxOrg) GetLstMan(t_path,t_sep string)(r_lst []sxMan,r_json []byte){
 
 	var err error
 	r_json,err = json.Marshal(&retJs);if err!=nil{
-		util.L2I("json.Marshal(&retJs) "+err.Error())
+		util.L3I("json.Marshal(&retJs) "+err.Error())
 		return
 	}
 
-	util.L2I("%s num=%d",retJs.Path,retJs.Num)
+	util.L3I("%s num=%d",retJs.Path,retJs.Num)
 	return
 }
 
@@ -488,7 +487,7 @@ func (p *sxOrg) GetLstMan(t_path,t_sep string)(r_lst []sxMan,r_json []byte){
 
 func (p *sxOrg) insertBrother(t_man *sxMan) {
 	pfx := p.matchFater(t_man.depart)
-	util.L2I("%v", pfx)
+	util.L3I("%v", pfx)
 }
 
 func (p *sxOrg) insertChild(t_man *sxMan) {
@@ -518,14 +517,14 @@ func (p *sxOrg) insertChild(t_man *sxMan) {
 		if px.Path == t_man.Path {
 			px.Men = append(px.Men, *t_man)
 		}
-		//util.L2I("---------------------1.4")
+		//util.L3I("---------------------1.4")
 		util.L1T("childx.Path=%s p.Depth=%d p.Path=%s  t_man.Path=%s px.Path=%s",childx.Path,p.Depth,p.Path, t_man.Path,px.Path)
-		//util.L2I("---------------------1.4.1")
+		//util.L3I("---------------------1.4.1")
 		return
 	}
 	childx.Depth = px.Depth + 1
 	px.Child = append(px.Child, &childx)
-	//util.L2I(childx.string())
+	//util.L3I(childx.string())
 
 	childx.insertChild(t_man)
 }
