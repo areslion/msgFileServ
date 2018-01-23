@@ -135,7 +135,7 @@ func L2D(format string, v ...interface{}) {
 	if lgx.nlevel > cst_lgL2D {
 		return
 	}
-	lgx.printx("T", format, v...)
+	lgx.printx("D", format, v...)
 }
 
 func L3I(format string, v ...interface{}) {
