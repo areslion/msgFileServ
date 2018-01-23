@@ -204,7 +204,10 @@ func getUsrMsg(t_id, t_page, t_limit, t_status,t_tmx string) (r_bts []byte, b_re
 	dbopt.Sqlcmd += "LIMIT ?,? "
 
 	util.L2D(dbopt.Sqlcmd)
-	if !dbopt.Query(t_tmx,t_tmx,npage*nlimit, t_limit){return}
+	if len(t_tmx)>0 {if !dbopt.Query(t_tmx,t_tmx,npage*nlimit, t_limit){return}}else{
+		if !dbopt.Query(npage*nlimit, t_limit){return}
+	}
+	
 
 	var resMsg sxMsgAskRes
 	resMsg.Page = npage
@@ -226,7 +229,7 @@ func getUsrMsg(t_id, t_page, t_limit, t_status,t_tmx string) (r_bts []byte, b_re
 	r_bts = bts
 
 	b_ret = true
-	util.L3I("getUsrMsg %s(toatl=%d  %d/(Limit %d %d) %d",t_id,resMsg.Totalnum, resMsg.Page, resMsg.Page, resMsg.Limit, len(resMsg.Lst))
+	util.L3I("getUsrMsg %s(toatl=%d  %d/(Limit %d %d) %s %d)",t_id,resMsg.Totalnum, resMsg.Page, resMsg.Page, resMsg.Limit,t_tmx, len(resMsg.Lst))
 
 	return
 }
