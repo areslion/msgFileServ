@@ -73,7 +73,7 @@ func Test_getDep(t *testing.T){
 
 var orgx sxOrg
 func Test_orgTree(t *testing.T){
-	for _,itm := range manlst.mapLstMan {
+	for _,itm := range manlst.lstMan {
 		orgx.insertChild(&itm)
 	}
 

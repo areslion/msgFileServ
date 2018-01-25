@@ -3,22 +3,19 @@ package employee
 
 import (
 	"encoding/json"
-	"strings"
 	"io/ioutil"
 	"os"
+	"strings"
 	//"database/sql"
 )
 import (
-	"fmt"
 	"dbbase"
+	"fmt"
 	"util"
 )
 
 const cst_sep string = ">"
 
-type sxStrA [][]string
-type sxPath map[string]string
-type sxDept map[string]sxPath
 
 type sxMan struct {
 	Path     string   `json:"path"`
@@ -36,13 +33,8 @@ type sxMan struct {
 }
 
 type sxManList struct {
-	mapLstMan []sxMan
-	mapLstDep []sxPath
-
-	lstDep    [][]string
-	lstKeyDep []sxDept
+	lstMan []sxMan
 }
-
 
 type sxOrg struct {
 	Path    string `json:path`
@@ -55,28 +47,27 @@ type sxOrg struct {
 	Men     []sxMan `json:Men`
 }
 
-type sxRetJsDep struct{
-	Num int `json:"num"`
-	Path string `json:"path"`
-	Depth int `json:"depth"`
-	Lst []string `json:"List"`
+type sxRetJsDep struct {
+	Num   int      `json:"num"`
+	Path  string   `json:"path"`
+	Depth int      `json:"depth"`
+	Lst   []string `json:"List"`
 }
 type sxRetJsMen struct {
-	Num int `json:"num"`
-	Path string `json:"path"`
-	Depth int `json:"depth"`
-	Lst []sxMan `json:"List"`
+	Num   int     `json:"num"`
+	Path  string  `json:"path"`
+	Depth int     `json:"depth"`
+	Lst   []sxMan `json:"List"`
 }
 
-
-func (p *sxMan) getKeyPath(t_grad int) (s_ret,s_lst string, b_ret bool) {
+func (p *sxMan) getKeyPath(t_grad int) (s_ret, s_lst string, b_ret bool) {
 	if t_grad+1 > len(p.depart) {
 		return
 	}
 
 	for ix := 0; ix <= t_grad; ix++ {
 		if ix == 0 {
-			s_ret = s_ret + p.depart[ix]			
+			s_ret = s_ret + p.depart[ix]
 		} else {
 			s_ret = s_ret + cst_sep + p.depart[ix]
 		}
@@ -86,8 +77,6 @@ func (p *sxMan) getKeyPath(t_grad int) (s_ret,s_lst string, b_ret bool) {
 	b_ret = true
 	return
 }
-
-
 
 // parse one man's department according path
 func (p *sxMan) parse(t_sep string, t_LtoR bool, t_lst *sxManList) {
@@ -115,15 +104,7 @@ func (p *sxMan) parse(t_sep string, t_LtoR bool, t_lst *sxManList) {
 		p.depart = append(p.depart, strOne)
 	}
 
-	for ix, itm := range p.depart {
-		mapx := make(sxPath)
-		mapx[itm] = ""
-		if len(t_lst.mapLstDep) < (ix + 1) {
-			t_lst.mapLstDep = append(t_lst.mapLstDep, mapx)
-		} else {
-			t_lst.mapLstDep[ix][itm] = ""
-		}
-
+	for ix, _ := range p.depart {
 		var keyx string = ""
 		for iy := 0; iy <= ix; iy++ {
 			if len(keyx) > 0 {
@@ -135,34 +116,15 @@ func (p *sxMan) parse(t_sep string, t_LtoR bool, t_lst *sxManList) {
 		if len(keyx) < 1 {
 			keyx = t_sep
 		}
-
-		var strNext string
-		if ix+1 < len(p.depart) {
-			strNext = p.depart[ix+1]
-		}
-		//var elex sxPath
-		elex := make(sxPath)
-		if len(t_lst.lstKeyDep) < (ix + 1) {
-			elex = make(sxPath)
-			eley := make(sxDept)
-			elex[itm] = strNext
-			eley[keyx] = elex
-			t_lst.lstKeyDep = append(t_lst.lstKeyDep, eley)
-		} else {
-			elex = make(sxPath)
-			elex[itm] = strNext
-			t_lst.lstKeyDep[ix][keyx] = elex
-		}
-		//util.L3I("%s %s    %v",p.path, keyx,elex)
 	}
 }
 
 //add one man info into list
 func (p *sxManList) push(t_man *sxMan) {
-	p.mapLstMan = append(p.mapLstMan, *t_man)
+	p.lstMan = append(p.lstMan, *t_man)
 }
 
-func (p *sxManList) readAllMan() {
+func (p *sxManList) readAllMan() (b_ret bool) {
 	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "readAllMan")
 	if !bret {
 		return
@@ -170,7 +132,7 @@ func (p *sxManList) readAllMan() {
 	defer dbopt.Close()
 
 	//dbopt.Sqlcmd = "SELECT pathx,ukey,email,namex,pwdlogin,gender,priviege FROM employee"
-	p.mapLstMan = p.mapLstMan[0:0]
+	p.lstMan = p.lstMan[0:0]
 	dbopt.Sqlcmd = "SELECT a.pathx,a.ukey,a.email,a.namex,a.pwdlogin,a.gender,a.priviege,b.numDev "
 	dbopt.Sqlcmd += "FROM employee a LEFT JOIN terDevBasicInfo b "
 	dbopt.Sqlcmd += "ON a.ukey=b.numUsrKey"
@@ -179,60 +141,25 @@ func (p *sxManList) readAllMan() {
 	}
 	for dbopt.Rows.Next() {
 		var ele sxMan
-		dbopt.Rows.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege,&ele.NumDev)
+		dbopt.Rows.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege, &ele.NumDev)
 		ele.parse(">", true, p)
 		p.push(&ele)
-
-		// if len(p.mapLstMan) > 10 {
-		// 	break
-		// }
 	}
 
-	// for ix, item := range p.mapLstDep {
-	// 	util.L3I("%d %d %v", ix, len(item), item)
-	// }
 
-	for ix := 0; ix < 5; ix++ {
-		_, lst := p.getDep(ix)
-		if len(lst) > 0 {
-			p.lstDep = append(p.lstDep, lst)
-		}
-
-		//util.L3I("%d %d %v",ix,len(lst),lst)
-	}
-
-	// for ix,_:=range p.lstDep {
-	// 	util.L3I("%d %d %v",ix,len(p.lstDep[ix]),p.lstDep[ix])
-	// }
-}
-
-func (p *sxManList) getDep(t_grade int) (r_key string, r_lst []string) {
-	//util.L3I("getDep %d %d",t_grade ,len(p.mapLstDep))
-	if t_grade+1 > len(p.mapLstDep) {
-		return
-	}
-
-	for key, _ := range p.mapLstDep[t_grade] {
-		r_lst = append(r_lst, key)
-		if len(r_key) > 0 {
-			r_key = r_key + cst_sep + key
-		} else {
-			r_key = r_key + key
-		}
-	}
-
+	b_ret = true
 	return
 }
 
 
-func (p *sxOrg) clear(){
+func (p *sxOrg) clear() {
 	p.Brother = p.Brother[0:0]
 	p.Child = p.Child[0:0]
 	p.Curkey = ""
 	p.Depth = 0
 	p.dicKey = p.dicKey[0:0]
 	p.Men = p.Men[0:0]
-	p.Path = ""	
+	p.Path = ""
 }
 
 func (p *sxOrg) tstJson() {
@@ -324,11 +251,12 @@ func (p *sxOrg) itorx() {
 	}
 }
 
-func (p *sxOrg) itorMan(t_lst *[]sxMan){
-	util.L1T("%d %s %s num=%d", p.Depth, p.Curkey, p.Path,len(p.Men))
+func (p *sxOrg) itorMan(t_lst *[]sxMan) {
+	util.L1T("%d %s %s num=%d", p.Depth, p.Curkey, p.Path, len(p.Men))
 
-	
-	for _,itm:=range p.Men{*t_lst=append(*t_lst,itm)}
+	for _, itm := range p.Men {
+		*t_lst = append(*t_lst, itm)
+	}
 
 	// for ix, _ := range p.Brother {
 	// 	p.Brother[ix].itorMan(t_lst)
@@ -389,14 +317,17 @@ func (p *sxOrg) matchFater(t_path []string) (r_fater *sxOrg) {
 	return
 }
 
-func (p *sxOrg) saveJson(t_path string){
-	bts,_,bret := p.toJson();if !bret{return}
+func (p *sxOrg) saveJson(t_path string) {
+	bts, _, bret := p.toJson()
+	if !bret {
+		return
+	}
 
-	ioutil.WriteFile(t_path,bts,os.ModePerm)
+	ioutil.WriteFile(t_path, bts, os.ModePerm)
 }
 
-func (p *sxOrg)string()(r_str string){
-	r_str = fmt.Sprintf("%d %s %s",p.Depth,p.Curkey,p.Path)
+func (p *sxOrg) string() (r_str string) {
+	r_str = fmt.Sprintf("%d %s %s", p.Depth, p.Curkey, p.Path)
 	return
 }
 
@@ -412,8 +343,6 @@ func (p *sxOrg) toJson() (r_bts []byte, r_json string, b_ret bool) {
 	r_json = string(r_bts)
 	return
 }
-
-
 
 func (p *sxOrg) getAddr(t_path []string) (t_addr *sxOrg) {
 	var pathkey string
@@ -432,36 +361,41 @@ func (p *sxOrg) getAddr(t_path []string) (t_addr *sxOrg) {
 	return
 }
 
-func (p *sxOrg) GetLstDepat(t_path,t_sep string)(r_lst []string,r_json string){
-	util.L3I("get "+t_path+" sep="+t_sep)
-	lst := strings.Split(t_path,t_sep)
-	px := p.matchFater(lst);if px==nil{
+func (p *sxOrg) GetLstDepat(t_path, t_sep string) (r_lst []string, r_json string) {
+	util.L3I("get " + t_path + " sep=" + t_sep)
+	lst := strings.Split(t_path, t_sep)
+	px := p.matchFater(lst)
+	if px == nil {
 		return
 	}
 
-	util.L1T("%v",*px)
-	for _,itm:=range px.Child {
-		str := itm.Curkey//+" "+itm.Path+fmt.Sprintf(" %d",itm.Depth)
-		r_lst = append(r_lst,str)		
+	util.L1T("%v", *px)
+	for _, itm := range px.Child {
+		str := itm.Curkey //+" "+itm.Path+fmt.Sprintf(" %d",itm.Depth)
+		r_lst = append(r_lst, str)
 		//util.L3I(itm.string())
 	}
 
 	var depx sxRetJsDep
-	depx.Lst = r_lst;depx.Num = len(r_lst);	depx.Depth = px.Depth;depx.Path = t_path
-	bts,err:=json.Marshal(&depx);if err!=nil{
-		util.L4E("json.Marshal(&depx) "+err.Error())
+	depx.Lst = r_lst
+	depx.Num = len(r_lst)
+	depx.Depth = px.Depth
+	depx.Path = t_path
+	bts, err := json.Marshal(&depx)
+	if err != nil {
+		util.L4E("json.Marshal(&depx) " + err.Error())
 		return
 	}
 	r_json = string(bts)
 
-
 	return
 }
 
-func (p *sxOrg) GetLstMan(t_path,t_sep string)(r_lst []sxMan,r_json []byte){
-	util.L3I("get "+t_path+" sep="+t_sep)
-	lst := strings.Split(t_path,t_sep)
-	px := p.matchFater(lst);if px==nil{
+func (p *sxOrg) GetLstMan(t_path, t_sep string) (r_lst []sxMan, r_json []byte) {
+	util.L3I("get " + t_path + " sep=" + t_sep)
+	lst := strings.Split(t_path, t_sep)
+	px := p.matchFater(lst)
+	if px == nil {
 		util.L3I("find nothing")
 		return
 	}
@@ -474,16 +408,15 @@ func (p *sxOrg) GetLstMan(t_path,t_sep string)(r_lst []sxMan,r_json []byte){
 	retJs.Lst = r_lst
 
 	var err error
-	r_json,err = json.Marshal(&retJs);if err!=nil{
-		util.L3I("json.Marshal(&retJs) "+err.Error())
+	r_json, err = json.Marshal(&retJs)
+	if err != nil {
+		util.L3I("json.Marshal(&retJs) " + err.Error())
 		return
 	}
 
-	util.L3I("%s num=%d",retJs.Path,retJs.Num)
+	util.L3I("%s num=%d", retJs.Path, retJs.Num)
 	return
 }
-
-
 
 func (p *sxOrg) insertBrother(t_man *sxMan) {
 	pfx := p.matchFater(t_man.depart)
@@ -512,13 +445,13 @@ func (p *sxOrg) insertChild(t_man *sxMan) {
 
 	var childx sxOrg
 	childx.Curkey = t_man.depart[p.Depth]
-	childx.Path,childx.Curkey, _ = t_man.getKeyPath(px.Depth)
+	childx.Path, childx.Curkey, _ = t_man.getKeyPath(px.Depth)
 	if childx.Path == p.Path {
 		if px.Path == t_man.Path {
 			px.Men = append(px.Men, *t_man)
 		}
 		//util.L3I("---------------------1.4")
-		util.L1T("childx.Path=%s p.Depth=%d p.Path=%s  t_man.Path=%s px.Path=%s",childx.Path,p.Depth,p.Path, t_man.Path,px.Path)
+		util.L1T("childx.Path=%s p.Depth=%d p.Path=%s  t_man.Path=%s px.Path=%s", childx.Path, p.Depth, p.Path, t_man.Path, px.Path)
 		//util.L3I("---------------------1.4.1")
 		return
 	}

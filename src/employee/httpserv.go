@@ -19,6 +19,7 @@ func getDepartment(t_res http.ResponseWriter,t_ask *http.Request){
 	if t_ask.Method=="GET"{
 		strPath:= t_ask.FormValue("path")
 		strSep:= t_ask.FormValue("sep")
+
 		_,jx :=m_org.GetLstDepat(strPath,strSep)
 		t_res.Write([]byte(jx))
 	}
@@ -44,14 +45,14 @@ func menChanged(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 func loadOrg(){
-	m_lstMan.mapLstMan = m_lstMan.mapLstMan[0:0]
+	m_lstMan.lstMan = m_lstMan.lstMan[0:0]
 	m_org.clear()
 	m_lstMan.readAllMan()
-	for _,itm := range m_lstMan.mapLstMan {
+	for _,itm := range m_lstMan.lstMan {
 		m_org.insertChild(&itm)
 	}
 
-	util.L3I("man info has bee re-load,num=%d",len(m_lstMan.mapLstMan))
+	util.L3I("man info has bee re-load,num=%d",len(m_lstMan.lstMan))
 }
 
 func StartServ(){
