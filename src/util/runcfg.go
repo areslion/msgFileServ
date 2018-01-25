@@ -18,6 +18,7 @@ type sxCfg_serF struct {
 	Sep  string `json:"sep"`
 	PathSft string `json:"pathSft"`
 	PathMsg string `json:"pathMsg"`
+	OrgSep string `json:"OrgSep"`
 	LogA string `json:"logA"`
 	LogB string `json:"logB"`
 	LogM int `json:"logM"`

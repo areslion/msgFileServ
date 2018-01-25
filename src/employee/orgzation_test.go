@@ -20,37 +20,37 @@ func Test_getDep(t *testing.T){
 	log.Println("")
 	log.Println("")
 	log.Println("new.............")
-	manx.Path = "m"+cst_sep+"a"+cst_sep+"b"+cst_sep+"c"
-	manx.parse(cst_sep,true,&manxLst)
+	manx.Path = "m"+getSep()+"a"+getSep()+"b"+getSep()+"c"
+	manx.parse(getSep(),true,&manxLst)
 	orx.insertChild(&manx)
 
 	log.Println("")
 	log.Println("")
 	log.Println("new.............")
-	manx.Path = "n"+cst_sep+"a"+cst_sep+"b"+cst_sep+"c"
-	manx.parse(cst_sep,true,&manxLst)
+	manx.Path = "n"+getSep()+"a"+getSep()+"b"+getSep()+"c"
+	manx.parse(getSep(),true,&manxLst)
 	orx.insertChild(&manx)
 
 	log.Println("")
 	log.Println("")
 	log.Println("new.............")
-	manx.Path = "n"+cst_sep+"x"+cst_sep+"b"+cst_sep+"c"
-	manx.parse(cst_sep,true,&manxLst)
+	manx.Path = "n"+getSep()+"x"+getSep()+"b"+getSep()+"c"
+	manx.parse(getSep(),true,&manxLst)
 	orx.insertChild(&manx)
 
 	log.Println("")
 	log.Println("")
 	log.Println("new.............")
-	manx.Path = "n"+cst_sep+"x"+cst_sep+"b"+cst_sep+"c1"
-	manx.parse(cst_sep,true,&manxLst)
+	manx.Path = "n"+getSep()+"x"+getSep()+"b"+getSep()+"c1"
+	manx.parse(getSep(),true,&manxLst)
 	orx.insertChild(&manx)
 
 	log.Println("")
 	log.Println("")
 	log.Println("new.............")
 	manx.Name = "C2.0"
-	manx.Path = "n"+cst_sep+"x"+cst_sep+"b"+cst_sep+"c2"
-	manx.parse(cst_sep,true,&manxLst)
+	manx.Path = "n"+getSep()+"x"+getSep()+"b"+getSep()+"c2"
+	manx.parse(getSep(),true,&manxLst)
 	orx.insertChild(&manx)
 
 	manx.Name = "C2.1"
@@ -65,7 +65,7 @@ func Test_getDep(t *testing.T){
 	util.L3I(string(bts))
 
 
-	lst := orx.GetLstDepat("n"+cst_sep+"x"+cst_sep+"b")
+	lst := orx.GetLstDepat("n"+getSep()+"x"+getSep()+"b")
 	for ix,itm := range lst{
 		util.L3I("%d %s",ix,itm)
 	}

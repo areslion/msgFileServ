@@ -14,8 +14,6 @@ import (
 	"util"
 )
 
-const cst_sep string = ">"
-
 
 type sxMan struct {
 	Path     string   `json:"path"`
@@ -32,8 +30,11 @@ type sxMan struct {
 	brother []sxMan
 }
 
-type sxManList struct {
+
+type sxEmp struct{
 	lstMan []sxMan
+	org sxOrg
+	bload bool
 }
 
 type sxOrg struct {
@@ -50,15 +51,50 @@ type sxOrg struct {
 type sxRetJsDep struct {
 	Num   int      `json:"num"`
 	Path  string   `json:"path"`
+	Sep  string   `json:"sep"`
 	Depth int      `json:"depth"`
 	Lst   []string `json:"List"`
 }
 type sxRetJsMen struct {
 	Num   int     `json:"num"`
 	Path  string  `json:"path"`
+	Sep  string   `json:"sep"`
 	Depth int     `json:"depth"`
 	Lst   []sxMan `json:"List"`
 }
+
+
+func (p *sxEmp)clear(){
+	p.lstMan = p.lstMan[0:0]
+	p.org.clear()
+	p.bload = false
+}
+
+func (p *sxEmp)load(){
+	p.clear()
+
+	p.bload = p.readAllMan()
+	for _,itm := range p.lstMan {
+		p.org.insertChild(&itm)
+	}
+
+	util.L3I("man info has bee re-load,num=%d",len(p.lstMan))
+}
+
+func (p *sxEmp) GetLstDepat(t_path, t_sep string) (r_lst []string, r_json string) {
+	if !p.bload {p.load()}
+	r_lst,r_json = p.org.getLstDepat(t_path,t_sep)
+	return 
+}
+
+func (p *sxEmp) GetLstMan(t_path, t_sep string) (r_lst []sxMan, r_json []byte) {
+	if !p.bload {p.load()}
+
+	r_lst,r_json =  p.org.getLstMan(t_path,t_sep)
+	return
+}
+
+
 
 func (p *sxMan) getKeyPath(t_grad int) (s_ret, s_lst string, b_ret bool) {
 	if t_grad+1 > len(p.depart) {
@@ -69,7 +105,7 @@ func (p *sxMan) getKeyPath(t_grad int) (s_ret, s_lst string, b_ret bool) {
 		if ix == 0 {
 			s_ret = s_ret + p.depart[ix]
 		} else {
-			s_ret = s_ret + cst_sep + p.depart[ix]
+			s_ret = s_ret + getSep() + p.depart[ix]
 		}
 		s_lst = p.depart[ix]
 	}
@@ -79,7 +115,7 @@ func (p *sxMan) getKeyPath(t_grad int) (s_ret, s_lst string, b_ret bool) {
 }
 
 // parse one man's department according path
-func (p *sxMan) parse(t_sep string, t_LtoR bool, t_lst *sxManList) {
+func (p *sxMan) parse(t_sep string, t_LtoR bool) {
 	fx := strings.Index
 	pathx := p.Path
 	if !t_LtoR {
@@ -120,11 +156,11 @@ func (p *sxMan) parse(t_sep string, t_LtoR bool, t_lst *sxManList) {
 }
 
 //add one man info into list
-func (p *sxManList) push(t_man *sxMan) {
+func (p *sxEmp) push(t_man *sxMan) {
 	p.lstMan = append(p.lstMan, *t_man)
 }
 
-func (p *sxManList) readAllMan() (b_ret bool) {
+func (p *sxEmp) readAllMan() (b_ret bool) {
 	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "readAllMan")
 	if !bret {
 		return
@@ -136,13 +172,11 @@ func (p *sxManList) readAllMan() (b_ret bool) {
 	dbopt.Sqlcmd = "SELECT a.pathx,a.ukey,a.email,a.namex,a.pwdlogin,a.gender,a.priviege,b.numDev "
 	dbopt.Sqlcmd += "FROM employee a LEFT JOIN terDevBasicInfo b "
 	dbopt.Sqlcmd += "ON a.ukey=b.numUsrKey"
-	if !dbopt.Query() {
-		return
-	}
+	if !dbopt.Query() { return }
 	for dbopt.Rows.Next() {
 		var ele sxMan
 		dbopt.Rows.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege, &ele.NumDev)
-		ele.parse(">", true, p)
+		ele.parse(getSep(), true)
 		p.push(&ele)
 	}
 
@@ -280,7 +314,7 @@ func (p *sxOrg) matchFater(t_path []string) (r_fater *sxOrg) {
 		if ix == 0 {
 			keyx = keyx + t_path[ix]
 		} else {
-			keyx = keyx + cst_sep + t_path[ix]
+			keyx = keyx + getSep() + t_path[ix]
 		}
 	}
 	for ix := 0; ix < p.Depth; ix++ {
@@ -288,7 +322,7 @@ func (p *sxOrg) matchFater(t_path []string) (r_fater *sxOrg) {
 		if ix == 0 {
 			cuKey = cuKey + t_path[ix]
 		} else {
-			cuKey = cuKey + cst_sep + t_path[ix]
+			cuKey = cuKey + getSep() + t_path[ix]
 		}
 	}
 
@@ -361,7 +395,7 @@ func (p *sxOrg) getAddr(t_path []string) (t_addr *sxOrg) {
 	return
 }
 
-func (p *sxOrg) GetLstDepat(t_path, t_sep string) (r_lst []string, r_json string) {
+func (p *sxOrg) getLstDepat(t_path, t_sep string) (r_lst []string, r_json string) {
 	util.L3I("get " + t_path + " sep=" + t_sep)
 	lst := strings.Split(t_path, t_sep)
 	px := p.matchFater(lst)
@@ -381,6 +415,7 @@ func (p *sxOrg) GetLstDepat(t_path, t_sep string) (r_lst []string, r_json string
 	depx.Num = len(r_lst)
 	depx.Depth = px.Depth
 	depx.Path = t_path
+	depx.Sep = getSep()
 	bts, err := json.Marshal(&depx)
 	if err != nil {
 		util.L4E("json.Marshal(&depx) " + err.Error())
@@ -388,10 +423,11 @@ func (p *sxOrg) GetLstDepat(t_path, t_sep string) (r_lst []string, r_json string
 	}
 	r_json = string(bts)
 
+	util.L3I("res %s num=%d",t_path,depx.Num)
 	return
 }
 
-func (p *sxOrg) GetLstMan(t_path, t_sep string) (r_lst []sxMan, r_json []byte) {
+func (p *sxOrg) getLstMan(t_path, t_sep string) (r_lst []sxMan, r_json []byte) {
 	util.L3I("get " + t_path + " sep=" + t_sep)
 	lst := strings.Split(t_path, t_sep)
 	px := p.matchFater(lst)
@@ -406,6 +442,7 @@ func (p *sxOrg) GetLstMan(t_path, t_sep string) (r_lst []sxMan, r_json []byte) {
 	retJs.Num = len(r_lst)
 	retJs.Path = t_path
 	retJs.Lst = r_lst
+	retJs.Sep = getSep()
 
 	var err error
 	r_json, err = json.Marshal(&retJs)
@@ -462,6 +499,9 @@ func (p *sxOrg) insertChild(t_man *sxMan) {
 	childx.insertChild(t_man)
 }
 
-func (p *sxOrg) insertOne(t_man *sxMan) {
+func getSep()(t_sep string){
+	t_sep = util.GetSftCfg().ServFile.OrgSep
 
+	if len(t_sep)<=0 {t_sep=">"}
+	return
 }
