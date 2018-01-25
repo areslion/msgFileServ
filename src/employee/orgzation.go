@@ -87,10 +87,10 @@ func (p *sxEmp) GetLstDepat(t_path, t_sep string) (r_lst []string, r_json string
 	return 
 }
 
-func (p *sxEmp) GetLstMan(t_path, t_sep string) (r_lst []sxMan, r_json []byte) {
+func (p *sxEmp) GetLstMan(t_path, t_sep string,t_sub int) (r_lst []sxMan, r_json []byte) {
 	if !p.bload {p.load()}
 
-	r_lst,r_json =  p.org.getLstMan(t_path,t_sep)
+	r_lst,r_json =  p.org.getLstMan(t_path,t_sep,t_sub)
 	return
 }
 
@@ -285,19 +285,16 @@ func (p *sxOrg) itorx() {
 	}
 }
 
-func (p *sxOrg) itorMan(t_lst *[]sxMan) {
+func (p *sxOrg) itorMan(t_lst *[]sxMan,t_sub int) {
 	util.L1T("%d %s %s num=%d", p.Depth, p.Curkey, p.Path, len(p.Men))
 
 	for _, itm := range p.Men {
 		*t_lst = append(*t_lst, itm)
 	}
 
-	// for ix, _ := range p.Brother {
-	// 	p.Brother[ix].itorMan(t_lst)
-	// }
-
+	if t_sub==0 {return}
 	for ix, _ := range p.Child {
-		p.Child[ix].itorMan(t_lst)
+		p.Child[ix].itorMan(t_lst,t_sub)
 	}
 }
 
@@ -427,8 +424,8 @@ func (p *sxOrg) getLstDepat(t_path, t_sep string) (r_lst []string, r_json string
 	return
 }
 
-func (p *sxOrg) getLstMan(t_path, t_sep string) (r_lst []sxMan, r_json []byte) {
-	util.L3I("get " + t_path + " sep=" + t_sep)
+func (p *sxOrg) getLstMan(t_path, t_sep string,t_sub int) (r_lst []sxMan, r_json []byte) {
+	util.L3I("get path=%s  sep=%s sub=%d", t_path,t_sep,t_sub)
 	lst := strings.Split(t_path, t_sep)
 	px := p.matchFater(lst)
 	if px == nil {
@@ -436,7 +433,7 @@ func (p *sxOrg) getLstMan(t_path, t_sep string) (r_lst []sxMan, r_json []byte) {
 		return
 	}
 
-	px.itorMan(&r_lst)
+	px.itorMan(&r_lst,t_sub)
 	var retJs sxRetJsMen
 	retJs.Depth = px.Depth
 	retJs.Num = len(r_lst)

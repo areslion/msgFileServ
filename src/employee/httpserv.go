@@ -1,6 +1,7 @@
 package employee
 import(
 	"net/http"
+	"strconv"
 
 	"util"
 )
@@ -31,7 +32,12 @@ func getMen(t_res http.ResponseWriter,t_ask *http.Request){
 	if t_ask.Method=="GET"{
 		strPath:= t_ask.FormValue("path")
 		strSep:= t_ask.FormValue("sep")
-		_,bst :=m_empl.GetLstMan(strPath,strSep)
+		strSub:= t_ask.FormValue("sub")
+		nsub,err := strconv.Atoi(strSub);if err!=nil{
+			util.L4E("strconv.Atoi(%s) %s",strSub,err.Error())
+			nsub = 1
+		}
+		_,bst :=m_empl.GetLstMan(strPath,strSep,nsub)
 		t_res.Write(bst)
 	}
 }
