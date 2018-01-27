@@ -9,6 +9,7 @@ import(
 )
 const (
 	Cst_sept = "/"
+	Cst_ver = "version 1.0.0.66 2018-1-27"
 )
 
 func IsExists(path string) bool {

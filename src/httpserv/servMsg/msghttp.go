@@ -5,6 +5,7 @@ import(
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 )
 import (
 	"util"
@@ -31,6 +32,8 @@ func init(){
 	http.HandleFunc(cst_prefix_getfil, getfile)//download a file resourse
 
 	http.HandleFunc("/msgfile/delmsg", delmsgfile)//obtain one task's detail info
+
+	http.HandleFunc("/log",getlog)//show log msg
 }
 
 func admget(t_res http.ResponseWriter,t_ask *http.Request){
@@ -114,6 +117,30 @@ func getfile(t_res http.ResponseWriter,t_ask *http.Request){
 
 	if t_ask.Method=="GET" {
 		util.NewFileServ(t_ask,&t_res,m_cfg.ServFile.PathMsg)
+	}
+}
+
+
+func getlog(t_res http.ResponseWriter,t_ask *http.Request){
+	util.L4E(t_ask.Method)
+
+	if t_ask.Method=="GET"{
+		flagx := t_ask.FormValue("flag")
+		strrow := t_ask.FormValue("row")
+		nrow,err := strconv.Atoi(strrow);if err!=nil {nrow=50}
+
+		var stam string
+		if flagx=="x" {stam = fmt.Sprintf("tail -n %d %s",nrow,util.GetSftCfg().ServFile.LogA)} else if flagx=="y" {
+			stam = fmt.Sprintf("tail -n %d %s",nrow,"/wsp/tsms/logx/TSMS.log")} else {
+				stam = fmt.Sprintf("tail -n %d %s",nrow,util.GetSftCfg().ServFile.LogA)
+			}
+		cmdx := exec.Command("/bin/bash","-c",stam)
+		bts,err := cmdx.Output();if err!=nil{
+			util.L4E("cmdx.Output %s %s",stam,err.Error())
+		} else {
+			t_res.Write([]byte(util.Cst_ver+"\r\n"))
+			t_res.Write(bts)
+		}
 	}
 }
 
