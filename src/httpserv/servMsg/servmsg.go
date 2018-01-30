@@ -42,6 +42,7 @@ type (
 		Url   string `json:"url"`
 		Descx string `json:"desc"`
 		Sizex string `json:"size"`
+		Flagx int `json:"flagx"`//0x00 新增 0x01删除
 	}
 	sxExctm struct {
 		Tmx string `json:"tmx"`
@@ -99,6 +100,11 @@ type (
 
 var m_cfg *util.SxCfgAll
 
+
+func (p *sxMsg)getFolder()(r_folder string){
+	r_folder = m_cfg.ServFile.PathMsg + util.GetOSSeptor() + p.Guid
+	return
+}
 
 func delMsg(t_msgid string) (b_ret bool) {
 	if len(t_msgid) != 36 {
@@ -298,7 +304,7 @@ func StartServMsg(t_cfg *util.SxCfgAll) {
 	//Tstservmsg()
 }
 
-func insertDBBytes(t_bts []byte) (r_id string, r_ret bool) {
+func insertDBBytes(t_bts []byte) (r_id string ,r_msg *sxMsg,r_ret bool) {
 	var msgx *sxMsg
 	msgx, r_ret = parseJson(t_bts)
 	if r_ret == false {
@@ -309,11 +315,12 @@ func insertDBBytes(t_bts []byte) (r_id string, r_ret bool) {
 	r_id = msgx.Guid
 
 	for ix, _ := range msgx.Attach {
-		msgx.Attach[ix].Url = cst_prefix_getfil + "/" + msgx.Guid + "/" + msgx.Attach[ix].Name
+		msgx.Attach[ix].Url = m_cfg.ServFile.GetDownloadUlrPre("")+ cst_prefix_getfil + "/" + msgx.Guid + "/" + msgx.Attach[ix].Name
 		util.L3I("insertDBBytes Url=" + msgx.Attach[ix].Url)
 	}
 	r_ret = insertDB(msgx)
 
+	r_msg = msgx
 	return
 }
 

@@ -6,6 +6,7 @@ import(
 	"io"
 	"net/http"
 	"os/exec"
+	"time"
 )
 import (
 	"util"
@@ -116,6 +117,7 @@ func getfile(t_res http.ResponseWriter,t_ask *http.Request){
 	util.L3I("getfile called "+t_ask.Method)
 
 	if t_ask.Method=="GET" {
+		util.L3I("%v",m_cfg.ServFile)
 		util.NewFileServ(t_ask,&t_res,m_cfg.ServFile.PathMsg)
 	}
 }
@@ -138,7 +140,8 @@ func getlog(t_res http.ResponseWriter,t_ask *http.Request){
 		bts,err := cmdx.Output();if err!=nil{
 			util.L4E("cmdx.Output %s %s",stam,err.Error())
 		} else {
-			t_res.Write([]byte(util.Cst_ver+"\r\n"))
+			tmstr := time.Now().Format("2006-01-02 15:04:05")
+			t_res.Write([]byte(util.Cst_ver+" "+tmstr+"\r\n\r\n"))
 			t_res.Write(bts)
 		}
 	}
@@ -190,7 +193,8 @@ func parseAsk(t_ask *http.Request) (r_ret bool) {
 
 	if bDesc {
 		var msgid string
-		msgid,r_ret = insertDBBytes(bufDes.Bytes());if r_ret==false {return}
+		var msgx *sxMsg
+		msgid,msgx,r_ret = insertDBBytes(bufDes.Bytes());if r_ret==false {return}
 
 		for _,itm := range attx {
 			if itm.bvalid==false { break }
@@ -198,6 +202,17 @@ func parseAsk(t_ask *http.Request) (r_ret bool) {
 			bsaves := saveAttach(itm.name,msgid,itm.buf.Bytes())
 			bfileSave = bfileSave||bsaves
 		}
+
+		var lstCur []sxAttatche
+		for ix,itm := range msgx.Attach{
+			if (itm.Flagx & 0x01)>0 {
+				pathx := msgx.getFolder()+util.GetOSSeptor()+itm.Name
+				util.L3I("attachement will be deleted "+pathx)
+				util.RemoveAll(pathx)
+			} else { lstCur = append(lstCur,msgx.Attach[ix])}
+		}
+		msgx.Attach = lstCur
+		saveDescMsg(msgx)
 	} else {r_ret=false}
 
 	r_ret = true

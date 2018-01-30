@@ -43,7 +43,7 @@ type SxSoft struct {
 }
 
 func (p *SxSoft) SetUlrF(t_cfg *util.SxCfgAll, t_f string) string {
-	p.Pathx = t_cfg.ServFile.GetDownloadUlrPre() + p.FolderID + util.Cst_sept + t_f
+	p.Pathx = t_cfg.ServFile.GetDownloadUlrPre("download") + p.FolderID + util.Cst_sept + t_f
 	return p.Pathx
 }
 func (p *SxSoft) Msgx() string {

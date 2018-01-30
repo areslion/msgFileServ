@@ -25,8 +25,10 @@ type sxCfg_serF struct {
 	LogLev int `json:"logLevel"`
 	LogObj int `json:"logObj"`
 }
-func (p *sxCfg_serF) GetDownloadUlrPre() (r_pre string) {
-	r_pre = "http://" + p.Ip + ":" + p.Port + "/download/"
+func (p *sxCfg_serF) GetDownloadUlrPre(t_bufix string) (r_pre string) {
+	if len(t_bufix)>0 {r_pre = "http://" + p.Ip + ":" + p.Port + "/"+t_bufix+"/"}else{
+		r_pre = "http://" + p.Ip + ":" + p.Port + "/"
+	}
 	return
 }
 type SxCfg_db struct{

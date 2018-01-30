@@ -54,7 +54,7 @@
     ],
     "attachement":[
         {"index":0,"filename":"readme.txt","url":"http://123","desc":"t1","size":"1M"},
-        {"index":1,"filename":"clean.bat","url":"http://123","desc":"t2","size":"2M"},
+        {"index":1,"filename":"b.bat","url":"http://123","desc":"t2","size":"2M"},
         {"index":2,"filename":"shutdown.bat","url":"http://123","desc":"t3","size":"3M"}
     ],
     "tmExc":[

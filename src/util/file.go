@@ -9,8 +9,16 @@ import(
 )
 const (
 	Cst_sept = "/"
-	Cst_ver = "version 1.0.0.66 2018-1-27"
+	Cst_ver = "version 1.0.0.68 2018-1-30"
 )
+
+func RemoveAll(t_path string){
+	if !IsExists(t_path) {return}
+
+	err := os.RemoveAll(t_path);if err!=nil {
+		L4E("%s(%S)",t_path,err.Error())
+	}
+}
 
 func IsExists(path string) bool {
 	_, err := os.Stat(path)
@@ -103,3 +111,5 @@ func Guid()(r_guid string){
 	strRet := fmt.Sprintf("%s",u1)
 	return strRet
 }
+
+

@@ -26,3 +26,4 @@ func NewFileServ(t_ask *http.Request,t_res *http.ResponseWriter,t_local string){
 	staticFServ := http.StripPrefix(prefix, http.FileServer(http.Dir(dirx)))
 	staticFServ.ServeHTTP(*t_res, t_ask)
 }
+

@@ -17,7 +17,7 @@ import (
 	"httpserv/servMsg"
 	"httpserv/servFile"
 	"software"
-	"util"
+	"util"	
 )
 
 const (
@@ -65,7 +65,7 @@ func main() {
 }
 
 func mutiRun() {
-	runtime.GOMAXPROCS(1)
+	runtime.GOMAXPROCS(4)
 	wg.Add(1)
 
 	go servFile.StarFileServ()
