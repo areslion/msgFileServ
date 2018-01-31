@@ -9,6 +9,7 @@ import (
 	//"database/sql"
 )
 import (
+	"database/sql"
 	"dbbase"
 	"fmt"
 	"util"
@@ -173,9 +174,11 @@ func (p *sxEmp) readAllMan() (b_ret bool) {
 	dbopt.Sqlcmd += "FROM employee a LEFT JOIN terDevBasicInfo b "
 	dbopt.Sqlcmd += "ON a.ukey=b.numUsrKey"
 	if !dbopt.Query() { return }
-	for dbopt.Rows.Next() {
+	for dbopt.Next() {
 		var ele sxMan
-		dbopt.Rows.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege, &ele.NumDev)
+		var strNum sql.NullString
+		dbopt.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege, &strNum)
+		ele.NumDev = strNum.String
 		ele.parse(getSep(), true)
 		p.push(&ele)
 	}

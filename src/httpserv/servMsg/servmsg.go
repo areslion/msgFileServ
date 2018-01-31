@@ -12,6 +12,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 import (
+	"database/sql"
 	"dbbase"
 	"util"
 )
@@ -156,9 +157,9 @@ func getAdminMsg(t_page, t_limit string) (r_bts []byte, b_ret bool) {
 	resMsg.Page = npage
 	resMsg.Limit = nlimit
 
-	for dbopt.Rows.Next() {
+	for dbopt.Next() {
 		var ele sxMsg
-		dbopt.Rows.Scan(&resMsg.Totalnum, &ele.Name, &ele.Tmx, &ele.Tmy, &ele.Numsend, &ele.NumOK, &ele.NumKO,&ele.Guid,&ele.Os)
+		dbopt.Scan(&resMsg.Totalnum, &ele.Name, &ele.Tmx, &ele.Tmy, &ele.Numsend, &ele.NumOK, &ele.NumKO,&ele.Guid,&ele.Os)
 		resMsg.Lst = append(resMsg.Lst, ele)
 
 		util.L3I(fmt.Sprintf("%v", ele))
@@ -204,7 +205,7 @@ func getUsrMsg(t_id, t_page, t_limit, t_status,t_tmx string) (r_bts []byte, b_re
 	}
 	if len(t_tmx)>0 {strFlag += " AND tmy>=? "}
 
-	dbopt.Sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE " + strFlag + ")num,namex,statusx,tmx,tmy,tmExc,descx "
+	dbopt.Sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE " + strFlag + ")num,namex,statusx,tmx,tmy,numMsg,descx,tmExc "
 	dbopt.Sqlcmd += "FROM msgSend "
 	dbopt.Sqlcmd += "WHERE " + strFlag
 	dbopt.Sqlcmd += "LIMIT ?,? "
@@ -220,12 +221,15 @@ func getUsrMsg(t_id, t_page, t_limit, t_status,t_tmx string) (r_bts []byte, b_re
 	resMsg.Limit = nlimit
 	resMsg.UsrID = t_id
 
-	for dbopt.Rows.Next() {
+	for dbopt.Next() {
 		var ele sxMsg
-		dbopt.Rows.Scan(&resMsg.Totalnum, &ele.Name, &ele.Status, &ele.Tmx, &ele.Tmy, &ele.Tmexc, &ele.Desc)
+		var strx,strx1 sql.NullString
+		dbopt.Scan(&resMsg.Totalnum, &ele.Name, &ele.Status, &ele.Tmx, &ele.Tmy,&ele.Guid, &strx, &strx1)
+		ele.Desc = strx.String
+		ele.Tmexc=strx1.String
 		resMsg.Lst = append(resMsg.Lst, ele)
 
-		util.L1T(fmt.Sprintf("%v", ele))
+		util.L2D(fmt.Sprintf("%v", ele))
 	}
 	bts, err := json.Marshal(resMsg)
 	if err != nil {
@@ -271,16 +275,16 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 
 	dbopt.Sqlcmd =  "SELECT namex,numSent,numSentOK,numSentKO,descx FROM msgAbstract WHERE numMsg=? " 
 	if !dbopt.Query(t_tsk) {return}
-	if dbopt.Rows.Next() {dbopt.Rows.Scan(&sdx.Name,&sdx.NAll,&sdx.NOK,&sdx.NKO,&sdx.Detail)} else {
+	if dbopt.Next() {dbopt.Scan(&sdx.Name,&sdx.NAll,&sdx.NOK,&sdx.NKO,&sdx.Detail)} else {
 		util.L4E("getOneTskSendDetail fail to get task %s",t_tsk)
 		return
 	}
 
 	dbopt.Sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE numMsg=?)num,numReciever,statusx,tmExc FROM msgSend WHERE numMsg=? limit ?,?" 
 	if !dbopt.Query(t_tsk,t_tsk,t_page*t_limit,t_limit){return}
-	for dbopt.Rows.Next(){
+	for dbopt.Next(){
 		var ele sxOneReciever
-		dbopt.Rows.Scan(&sdx.Totalnum,&ele.NumDev,&ele.Status,&ele.TmExc)
+		dbopt.Scan(&sdx.Totalnum,&ele.NumDev,&ele.Status,&ele.TmExc)
 		sdx.Lst = append(sdx.Lst,ele)
 	}
 
@@ -363,8 +367,8 @@ func insertSender(t_msg *sxMsg) (b_ret bool) {
 
 	var px *sxMsg = t_msg
 	tmNow := time.Now().Format("2006-01-02 15:04:05")
-	dbopt.Sqlcmd = "REPLACE INTO msgSend (numMsg,numReciever,tmm,tmx,tmy,namex,descx)"
-	dbopt.Sqlcmd += "VALUE(?,?,?,?,?,?,?)"
+	dbopt.Sqlcmd = "REPLACE INTO msgSend (numMsg,numReciever,tmm,os,tmx,tmy,namex,descx)"
+	dbopt.Sqlcmd += "VALUE(?,?,?,?,?,?,?,?)"
 	if !dbopt.PrePare() {return}
 
 	for ix, item := range t_msg.Reciever {
@@ -372,7 +376,7 @@ func insertSender(t_msg *sxMsg) (b_ret bool) {
 			util.L4E("insertSender invalid receivere=" + item.Guid)
 			continue
 		}
-		if !dbopt.ExcAlone(px.Guid, item.Guid, tmNow, px.Tmx, px.Tmy, px.Name, px.Desc) {return}
+		if !dbopt.ExcAlone(px.Guid, item.Guid, tmNow,px.Os, px.Tmx, px.Tmy, px.Name, px.Desc) {return}
 		util.L1T("add a task to a user %d %d %v", ix,dbopt.Affected(),item )
 	}
 
@@ -480,7 +484,7 @@ func updateSendStatus(t_tskid, t_usrid string, t_status int) (r_OK, r_KO int, b_
 
 	dbopt.Sqlcmd = "SELECT statusx FROM msgSend WHERE numMsg=? AND numReciever=? "
 	if !dbopt.Query(t_tskid, t_usrid) {return}
-	if dbopt.Rows.Next() { dbopt.Rows.Scan(&statusOld) } else {
+	if dbopt.Next() { dbopt.Scan(&statusOld) } else {
 		util.L4E("updateSendStatus smt.Query(%s) failed", dbopt.Sqlcmd)
 		return
 	}

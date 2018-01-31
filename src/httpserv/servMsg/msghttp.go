@@ -124,7 +124,7 @@ func getfile(t_res http.ResponseWriter,t_ask *http.Request){
 
 
 func getlog(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L4E(t_ask.Method)
+	util.L3I(t_ask.Method)
 
 	if t_ask.Method=="GET"{
 		flagx := t_ask.FormValue("flag")

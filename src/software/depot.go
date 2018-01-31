@@ -147,8 +147,8 @@ func getFolderID(t_fileNmae string) (r_id string,b_ret bool) {
 	dbopt.Sqlcmd = "SELECT folderId FROM depotSft WHERE namexf = ?"
 	if !dbopt.Query(t_fileNmae) {return}
 
-	if dbopt.Rows.Next() {
-		dbopt.Rows.Scan(&r_id)
+	if dbopt.Next() {
+		dbopt.Scan(&r_id)
 	} else {
 		r_id = util.Guid()
 	}
@@ -166,8 +166,8 @@ func GetSft(t_name string) (r_sft *SxSoft, r_folderid string, b_ret bool) {
 	dbopt.Sqlcmd += "FROM depotSft "
 	dbopt.Sqlcmd += "WHERE namexa = ? "
 	if !dbopt.Query(t_name) {return}
-	if dbopt.Rows.Next() {
-		dbopt.Rows.Scan(&r_sft.Namexf, &r_sft.Namexa, &r_sft.Ver, &r_sft.Pathx, &r_sft.PathIcon, &r_sft.FlgSft, &r_sft.Md5x, &r_sft.FolderID)
+	if dbopt.Next() {
+		dbopt.Scan(&r_sft.Namexf, &r_sft.Namexa, &r_sft.Ver, &r_sft.Pathx, &r_sft.PathIcon, &r_sft.FlgSft, &r_sft.Md5x, &r_sft.FolderID)
 		r_folderid = r_sft.FolderID
 	} else {
 		r_folderid = util.Guid()
@@ -199,10 +199,10 @@ func GetSftLst() (r_lst *list.List, r_json string, b_ret bool) {
 
 	r_lst = list.New()
 	var lstar []SxSftListEle
-	for dbopt.Rows.Next() {
+	for dbopt.Next() {
 		var sft SxSoft
 		var jxe SxSftListEle
-		dbopt.Rows.Scan(&sft.Namexf, &sft.Namexa, &sft.Ver, &sft.Pathx,
+		dbopt.Scan(&sft.Namexf, &sft.Namexa, &sft.Ver, &sft.Pathx,
 			&sft.PathIcon, &sft.FlgSft, &sft.Md5x, &sft.FolderID, &sft.Desc)
 		r_lst.PushBack(sft)
 

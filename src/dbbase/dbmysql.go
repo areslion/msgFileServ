@@ -20,7 +20,7 @@ type SCfg struct {
 
 type sxDB struct {
 	cnn    *sql.DB
-	Rows   *sql.Rows
+	rows   *sql.Rows
 	smt    *sql.Stmt
 	res    sql.Result
 	cfg    *util.SxCfg_db
@@ -46,7 +46,7 @@ func (p *sxDB) Close() {
 	p.cnn.Close()
 }
 func (p *sxDB) closeRes() {
-	if p!=nil&&p.Rows!=nil {p.Rows.Close()}
+	if p!=nil&&p.rows!=nil {p.rows.Close()}
 	if p!=nil&&p.smt!=nil {p.smt.Close()}
 }
 func (p *sxDB) Exc(args ...interface{}) (b_ret bool) {
@@ -75,7 +75,7 @@ func (p *sxDB) ExcAlone(args ...interface{}) (b_ret bool) {
 	b_ret = true
 	return
 }
-
+func (p *sxDB) Next()bool{return p.rows.Next()}
 func (p *sxDB) open() (b_ret bool) {
 	var err error
 	p.cnn, err = sql.Open("mysql", p.cfg.GetCntStr())
@@ -92,7 +92,7 @@ func (p *sxDB) Query(args ...interface{}) (b_ret bool) {
 		return
 	}
 
-	p.Rows, err = p.smt.Query(args...)
+	p.rows, err = p.smt.Query(args...)
 	if err != nil {
 		p.logF("Query() Fail to Query(args) " + err.Error())
 		return
@@ -113,10 +113,21 @@ func (p *sxDB) PrePare() (b_ret bool) {
 	b_ret = true
 	return
 }
+func  (p *sxDB) Scan(dest ...interface{}) (r_err error) {
+	r_err = p.rows.Scan(dest ...)
+	if r_err!=nil {
+		util.L4Ex(4,2,r_err.Error())
+	}
+	return
+}
 func (p *sxDB) logF(t_fmt string,v...interface{}){
 	fmtx := fmt.Sprintf("sxDB(%s) %s",p.tag,t_fmt)
 	util.L5Fx(5,2,fmtx,v...)
 }
+
+
+
+
 
 func (p *SCfg) Init(t_ip, t_usr, t_pwd, t_db, t_cset string) {
 	p.hostIP = t_ip

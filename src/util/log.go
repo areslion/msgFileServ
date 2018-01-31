@@ -151,6 +151,12 @@ func L4E(format string, v ...interface{}) {
 	}
 	lgx.printx("E", format, v...)
 }
+func L4Ex(t_dep, t_grad int, format string, v ...interface{}) {
+	if lgx.nlevel > cst_lgL4E {
+		return
+	}
+	lgx.printEx(t_dep, t_grad, "E", format, v...)
+}
 
 func L5F(format string, v ...interface{}) {
 	if lgx.nlevel > cst_lgL5F {
