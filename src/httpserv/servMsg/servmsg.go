@@ -23,13 +23,14 @@ const (
 	cst_tsks_3e = 0x0004 //客户端执行成功
 	cst_tsks_4f = 0x0008 //客户端执行失败
 	cst_tsks_21c = 0x0010 //客户取消执行
-	cst_tsks_22i = 0x0020 //消息过期未执行
+	cst_tsks_22i = 0x0020 //消息过期未执行	
+	cst_tsks_24i = 0x0040 //消息不符合终端条件终端放弃执行
 
 	cst_fix_desc      = "Desc.json"
 	cst_prefix_getfil = "/msgfile/getfile/"
 )
 
-var cst_tsksArr = [...]int{cst_tsks_1u, cst_tsks_2r, cst_tsks_3e, cst_tsks_4f,cst_tsks_21c,cst_tsks_22i}
+var cst_tsksArr = [...]int{cst_tsks_1u, cst_tsks_2r, cst_tsks_3e, cst_tsks_4f,cst_tsks_21c,cst_tsks_22i,cst_tsks_24i}
 
 
 
@@ -493,7 +494,7 @@ func updateSendStatus(t_tskid, t_usrid string, t_status int) (r_OK, r_KO int, b_
 		util.L3I("updateSendStatus invalid status(%s.%s %d)", t_usrid, t_tskid, statusOld)
 		return
 	}
-	if statusOld == cst_tsks_3e {
+	if statusOld == cst_tsks_3e||statusOld == cst_tsks_24i {
 		util.L3I("updateSendStatus has been set as(%s.%s %d)", t_usrid, t_tskid, statusOld)
 		return
 	}
