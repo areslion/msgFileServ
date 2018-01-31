@@ -206,7 +206,7 @@ func getUsrMsg(t_id, t_page, t_limit, t_status,t_tmx string) (r_bts []byte, b_re
 	}
 	if len(t_tmx)>0 {strFlag += " AND tmy>=? "}
 
-	dbopt.Sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE " + strFlag + ")num,namex,statusx,tmx,tmy,numMsg,descx,tmExc "
+	dbopt.Sqlcmd = "SELECT (SELECT COUNT(*) FROM msgSend WHERE " + strFlag + ")num,namex,statusx,tmx,tmy,numMsg,descx,tmExc,os "
 	dbopt.Sqlcmd += "FROM msgSend "
 	dbopt.Sqlcmd += "WHERE " + strFlag
 	dbopt.Sqlcmd += "LIMIT ?,? "
@@ -225,7 +225,7 @@ func getUsrMsg(t_id, t_page, t_limit, t_status,t_tmx string) (r_bts []byte, b_re
 	for dbopt.Next() {
 		var ele sxMsg
 		var strx,strx1 sql.NullString
-		dbopt.Scan(&resMsg.Totalnum, &ele.Name, &ele.Status, &ele.Tmx, &ele.Tmy,&ele.Guid, &strx, &strx1)
+		dbopt.Scan(&resMsg.Totalnum, &ele.Name, &ele.Status, &ele.Tmx, &ele.Tmy,&ele.Guid, &strx, &strx1,&ele.Os)
 		ele.Desc = strx.String
 		ele.Tmexc=strx1.String
 		resMsg.Lst = append(resMsg.Lst, ele)
