@@ -15,11 +15,12 @@ func init(){
 }
 
 func getDepartment(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L3I(t_ask.Method)
+	util.L3I("%s %s",t_ask.Method,t_ask.URL)
 
 	if t_ask.Method=="GET"{
 		strPath:= t_ask.FormValue("path")
 		strSep:= t_ask.FormValue("sep")
+		util.L3I("%s %s",strPath,strSep)
 
 		_,jx :=m_empl.GetLstDepat(strPath,strSep)
 		t_res.Write([]byte(jx))
@@ -27,12 +28,13 @@ func getDepartment(t_res http.ResponseWriter,t_ask *http.Request){
 }
 
 func getMen(t_res http.ResponseWriter,t_ask *http.Request){
-	util.L3I(t_ask.Method)
+	util.L3I("%s %s",t_ask.Method,t_ask.URL.Path)
 
 	if t_ask.Method=="GET"{
 		strPath:= t_ask.FormValue("path")
 		strSep:= t_ask.FormValue("sep")
 		strSub:= t_ask.FormValue("sub")
+		util.L3I("%s %s %s",strPath,strSep,strSub)
 		nsub,err := strconv.Atoi(strSub);if err!=nil{
 			util.L4E("strconv.Atoi(%s) %s",strSub,err.Error())
 			nsub = 1
@@ -54,4 +56,5 @@ func menChanged(t_res http.ResponseWriter,t_ask *http.Request){
 
 func StartServ(){
 	m_empl.load()
+	//m_empl.org.saveJson(".\\tree.json")
 }

@@ -15,6 +15,7 @@ import (
 	"util"
 )
 
+const cst_sepstd=">"
 
 type sxMan struct {
 	Path     string   `json:"path"`
@@ -22,7 +23,7 @@ type sxMan struct {
 	NumDev   string   `json:"devnum"`
 	Emial    string   `json:"email"`
 	Name     string   `json:"name"`
-	depart   []string `json:"depart"`
+	depart   []string
 	Pwdlogin string   `json:"pwdlogin"`
 
 	Gender   int `json:"gender"`
@@ -39,14 +40,14 @@ type sxEmp struct{
 }
 
 type sxOrg struct {
-	Path    string `json:path`
+	Path    string `json:"path"`
 	dicKey  []string
 	Curkey  string
-	Depth   int `json:depth`
+	Depth   int `json:"depth"`
 	Brother []sxOrg
 	Child   []*sxOrg
 	pathclt [][]*sxOrg
-	Men     []sxMan `json:Men`
+	Men     []sxMan `json:"Men"`
 }
 
 type sxRetJsDep struct {
@@ -116,44 +117,23 @@ func (p *sxMan) getKeyPath(t_grad int) (s_ret, s_lst string, b_ret bool) {
 }
 
 // parse one man's department according path
-func (p *sxMan) parse(t_sep string, t_LtoR bool) {
-	fx := strings.Index
-	pathx := p.Path
-	if !t_LtoR {
-		fx = strings.LastIndex
-	}
-
-	p.depart = p.depart[0:0]
-	for true {
-		var strOne string
-		ix := fx(pathx, t_sep)
-		if ix == -1 {
-			p.depart = append(p.depart, pathx)
-			break
-		}
-		if t_LtoR {
-			strOne = pathx[:ix]
-			pathx = pathx[ix+1:]
+func (p *sxMan) parse() {
+	var pathx string
+	strSep:=util.GetSftCfg().ServFile.OrgSep
+	lst := strings.Split(p.Path,strSep)
+	if util.GetSftCfg().ServFile.OrgDireIsL { 
+			p.depart = lst 
+			pathx = strings.Replace(p.Path,strSep,cst_sepstd,-1)
 		} else {
-			strOne = pathx[ix+1:]
-			pathx = pathx[:ix]
-		}
-		p.depart = append(p.depart, strOne)
-	}
-
-	for ix, _ := range p.depart {
-		var keyx string = ""
-		for iy := 0; iy <= ix; iy++ {
-			if len(keyx) > 0 {
-				keyx = keyx + t_sep + p.depart[iy]
-			} else {
-				keyx = keyx + p.depart[iy]
+		for ix :=len(lst)-1;ix>=0;ix-- {
+			p.depart =append(p.depart,lst[ix])
+			if len(pathx)>0 {pathx = pathx+ cst_sepstd + lst[ix]}else {
+				pathx = pathx+ lst[ix]
 			}
 		}
-		if len(keyx) < 1 {
-			keyx = t_sep
-		}
 	}
+	//util.L3I("---------------------\r\n%s\r\n%s",p.Path,pathx)
+	p.Path = pathx
 }
 
 //add one man info into list
@@ -179,7 +159,7 @@ func (p *sxEmp) readAllMan() (b_ret bool) {
 		var strNum sql.NullString
 		dbopt.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege, &strNum)
 		ele.NumDev = strNum.String
-		ele.parse(getSep(), true)
+		ele.parse()
 		p.push(&ele)
 	}
 
@@ -500,8 +480,9 @@ func (p *sxOrg) insertChild(t_man *sxMan) {
 }
 
 func getSep()(t_sep string){
-	t_sep = util.GetSftCfg().ServFile.OrgSep
+	// t_sep = util.GetSftCfg().ServFile.OrgSep
 
-	if len(t_sep)<=0 {t_sep=">"}
+	// if len(t_sep)<=0 {t_sep=">"}
+	t_sep = cst_sepstd
 	return
 }

@@ -19,6 +19,7 @@ type sxCfg_serF struct {
 	PathSft string `json:"pathSft"`
 	PathMsg string `json:"pathMsg"`
 	OrgSep string `json:"OrgSep"`
+	OrgDireIsL bool `json:"OrgDireIsLeft"`
 	LogA string `json:"logA"`
 	LogB string `json:"logB"`
 	LogM int `json:"logM"`
