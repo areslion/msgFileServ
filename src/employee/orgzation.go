@@ -119,9 +119,26 @@ func (p *sxMan) getKeyPath(t_grad int) (s_ret, s_lst string, b_ret bool) {
 // parse one man's department according path
 func (p *sxMan) parse() {
 	var pathx string
-	strSep:=util.GetSftCfg().ServFile.OrgSep
+
+	fx:=func(t_strIn string)(b_LtoR bool,r_sep string,b_ret bool){
+		b_ret = true
+		if (strings.Index(t_strIn,">")>=0){
+			b_LtoR = true
+			r_sep = ">"
+		} else if (strings.Index(t_strIn,"<")>=0){
+			b_LtoR = false
+			r_sep = "<"
+		} else {b_ret = false}
+
+		return
+	}
+
+	bLtoR,strSep,bret := fx(p.Path);if !bret {return}
+
+	//strSep:=util.GetSftCfg().ServFile.OrgSep
 	lst := strings.Split(p.Path,strSep)
-	if util.GetSftCfg().ServFile.OrgDireIsL { 
+
+	if bLtoR { 
 			p.depart = lst 
 			pathx = strings.Replace(p.Path,strSep,cst_sepstd,-1)
 		} else {
