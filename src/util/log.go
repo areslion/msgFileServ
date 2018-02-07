@@ -70,11 +70,11 @@ func (p *sxLog) printx(t_tab string, format string, v ...interface{}) {
 	fname := GetFileName(file)
 	fx := runtime.FuncForPC(pc)
 	funname := fx.Name()
-	lst := strings.Split(funname, ".")
+	//lst := strings.Split(funname, ".")
 
 	var strMsg string
 	strtmx := time.Now().Format("2006-01-02 15:04:05")
-	strMsg = fmt.Sprintf("["+t_tab+"] "+lst[len(lst)-1]+" "+format, v...) + fmt.Sprintf("  %s:%d", fname, line)
+	strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s %s:%d",funname, fname, line)
 	//strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s",getFileStack(4,4))
 	strF := strtmx + "  " + strMsg + "\r\n"
 	if (p.nOutObj & 0x01) > 0 {
@@ -101,7 +101,7 @@ func (p *sxLog) printEx(t_dep, t_grad int, t_tab string, format string, v ...int
 	strtmx := time.Now().Format("2006-01-02 15:04:05")
 	//strMsg = fmt.Sprintf("["+t_tab+"] "+format, v...) + fmt.Sprintf("  %s:%d", fname, line)
 	strmsg, strFN := getFileStack(t_dep, t_grad)
-	strMsg = fmt.Sprintf("["+t_tab+"] "+strFN+" "+format, v...) + fmt.Sprintf("  %s", strmsg)
+	strMsg = fmt.Sprintf("["+t_tab+"] "+strFN+" "+format, v...) + fmt.Sprintf("  %s",strmsg)
 	strF := strtmx + "  " + strMsg + "\r\n"
 	if (p.nOutObj & 0x01) > 0 {
 		log.Println(strMsg)

@@ -12,6 +12,7 @@ func init(){
 	http.HandleFunc("/man/getDepart",getDepartment)
 	http.HandleFunc("/man/getMen",getMen)
 	http.HandleFunc("/man/MenChanged",menChanged)
+	http.HandleFunc("/man/search",search)
 }
 
 func getDepartment(t_res http.ResponseWriter,t_ask *http.Request){
@@ -49,6 +50,17 @@ func menChanged(t_res http.ResponseWriter,t_ask *http.Request){
 
 	if t_ask.Method=="POST"{
 		m_empl.load()
+	}
+}
+
+func search(t_res http.ResponseWriter,t_ask *http.Request){
+	util.L3I(t_ask.Method)
+	if t_ask.Method=="GET"{
+		keys:=t_ask.FormValue("keys")
+		sept := t_ask.FormValue("sep")
+
+		_,bts := m_empl.org.GetLstSearch(keys,sept)
+		t_res.Write(bts)
 	}
 }
 

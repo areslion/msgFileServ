@@ -64,6 +64,13 @@ type sxRetJsMen struct {
 	Depth int     `json:"depth"`
 	Lst   []sxMan `json:"List"`
 }
+type sxRetSearch struct{
+	Sep string `json:"separator"`
+	NumMen int `json:"NumMen"`
+	NumDep int `json:"NumDep"`
+	MenLst []sxMan `json:"menlist"`
+	DepartLst []string `json:"departlist"`
+}
 
 
 func (p *sxEmp)clear(){
@@ -452,6 +459,27 @@ func (p *sxOrg) getLstMan(t_path, t_sep string,t_sub int) (r_lst []sxMan, r_json
 	return
 }
 
+func (p *sxOrg) GetLstSearch(t_Keys,t_sep string)(r_strJson string,r_json []byte){
+	var retSearch sxRetSearch
+	p.searchAll(&retSearch,strings.Split(t_Keys,t_sep))
+	
+	retSearch.NumDep = len(retSearch.DepartLst)
+	retSearch.NumMen = len(retSearch.MenLst)
+	retSearch.Sep = cst_sepstd
+	for ix,itm :=range retSearch.MenLst{util.L1T("Men %d %s",ix,itm.Path+cst_sepstd+itm.Name)}
+	for ix,itm :=range retSearch.DepartLst{	util.L1T("Depart %d %s",ix,itm)}
+
+	var err error
+	r_json,err = json.Marshal(&retSearch);if err!=nil{
+		util.L4E("json.Marshal(&retSearch) %s",err.Error)
+		return
+	}
+
+	r_strJson = string(r_json)
+
+	return
+}
+
 func (p *sxOrg) insertBrother(t_man *sxMan) {
 	pfx := p.matchFater(t_man.depart)
 	util.L3I("%v", pfx)
@@ -494,6 +522,34 @@ func (p *sxOrg) insertChild(t_man *sxMan) {
 	//util.L3I(childx.string())
 
 	childx.insertChild(t_man)
+}
+
+func (p *sxOrg) searchAll(t_Out *sxRetSearch,t_keys []string)(){
+	if isMatchStrs(p.Path,t_keys) {t_Out.DepartLst = append(t_Out.DepartLst,p.Path)}
+
+	for _,ix:=range p.Men {
+		toSx :=ix.Path+cst_sepstd+ix.Name
+		if isMatchStrs(toSx,t_keys) {t_Out.MenLst = append(t_Out.MenLst,ix)}
+	}
+
+	for _,ix :=range p.Brother {
+		ix.searchAll(t_Out,t_keys)
+	}
+
+	for _,ix:=range p.Child{
+		ix.searchAll(t_Out,t_keys)
+	}
+
+	return
+}
+
+func isMatchStrs(t_obj string,t_keys []string)(b_ret bool){
+	for _,ix:=range t_keys{
+		if strings.Index(t_obj,ix)==-1 {return}
+	}
+
+	b_ret = true
+	return
 }
 
 func getSep()(t_sep string){
