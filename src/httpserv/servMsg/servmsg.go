@@ -285,7 +285,9 @@ func getOneTskSendDetail(t_tsk string,t_page,t_limit int) (r_bts []byte, b_ret b
 	if !dbopt.Query(t_tsk,t_tsk,t_page*t_limit,t_limit){return}
 	for dbopt.Next(){
 		var ele sxOneReciever
-		dbopt.Scan(&sdx.Totalnum,&ele.NumDev,&ele.Status,&ele.TmExc)
+		var strvalExc sql.NullString
+		dbopt.Scan(&sdx.Totalnum,&ele.NumDev,&ele.Status,&strvalExc)
+		ele.TmExc = strvalExc.String
 		sdx.Lst = append(sdx.Lst,ele)
 	}
 

@@ -88,7 +88,7 @@ func getsendlst(t_res http.ResponseWriter,t_ask *http.Request){
 	bret := false
 	if t_ask.Method =="GET"{
 		tskid := t_ask.FormValue("task");if len(tskid)!=36 {
-			util.L4E("getsendlst invalid task guid %s",tskid)
+			util.L4E("getsendlst invalid task guid %s=%d",tskid,len(tskid))
 			t_res.WriteHeader(http.StatusNotAcceptable)
 			return
 		}
