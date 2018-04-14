@@ -39,6 +39,11 @@ type sxEmp struct{
 	bload bool
 }
 
+type sxGroup struct{
+	ListMan []sxMan `json:"list"`
+	bload bool
+}
+
 type sxOrg struct {
 	Path    string `json:"path"`
 	dicKey  []string
@@ -122,6 +127,62 @@ func (p *sxMan) getKeyPath(t_grad int) (s_ret, s_lst string, b_ret bool) {
 	b_ret = true
 	return
 }
+
+
+//将用户分组信息保存到数据库
+func (p *sxGroup) saveGroup(t_bts []byte)(b_res bool){
+	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "saveGroup")
+	if (!bret||len(t_bts)==0) {return}
+	defer dbopt.Close()
+
+	var group sxGroup
+	_err := json.Unmarshal(t_bts,&group) ;if _err!=nil {
+		util.L4E("json.Unmarshal(t_bts,&group.ListMan)"+_err.Error())
+	}
+
+	dbopt.Sqlcmd = "TRUNCATE TABLE employeeGroup"
+	dbopt.Exc()
+	for _,itx:= range group.ListMan {
+		//INSERT INTO employeeGroup(namex,ukey,email,gender,priviege,pathx) VALUES("1","2","3",0,1,"")
+		dbopt.Sqlcmd = "REPLACE INTO employeeGroup(namex,ukey,email,gender,priviege,pathx) "
+		dbopt.Sqlcmd += "VALUES(?,?,?,?,?,?)"
+		dbopt.Exc(itx.Name,itx.Ukey,itx.Emial,itx.Gender,itx.Priviege,itx.Path)
+		}
+
+	b_res = true
+	return
+}
+
+//从数据库直接读取分组信息
+func (p *sxGroup) getGroup(t_sep string)(r_bst []byte, r_json string){
+	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "readGroup")
+	if !bret {return}
+	defer dbopt.Close()
+
+	//dbopt.Sqlcmd = "SELECT pathx,ukey,email,namex,pwdlogin,gender,priviege FROM employee"
+	p.ListMan = p.ListMan[0:0]
+	dbopt.Sqlcmd = "SELECT a.pathx,a.ukey,a.email,a.namex,a.pwdlogin,a.gender,a.priviege,b.numDev "
+	dbopt.Sqlcmd += "FROM employeeGroup a LEFT JOIN terDevBasicInfo b "
+	dbopt.Sqlcmd += "ON a.ukey=b.numUsrKey"
+	if !dbopt.Query() { return }
+	for dbopt.Next() {
+		var ele sxMan
+		var strNum sql.NullString
+		dbopt.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege, &strNum)
+		ele.NumDev = strNum.String
+		ele.parse()
+		p.ListMan = append(p.ListMan,ele)
+	}
+
+	r_bts,_err := json.Marshal(&p.ListMan);if _err!=nil {
+		util.L4E("json.Marshal "+_err.Error())
+	}
+
+	r_json = string(r_bts)
+
+	return
+}
+
 
 // parse one man's department according path
 func (p *sxMan) parse() {

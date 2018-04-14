@@ -8,7 +8,7 @@ import (
 
 const (
 	cst_cfgPath_linux = "/wsp/tsms/cfg/tsms_run.json"
-	cst_cfgPath_windows = "e:\\workspace\\005.XNKJ\\002.Project\\004.GoWSP\\cfg\\tsms_run.json"
+	cst_cfgPath_windows = "h:\\workspace\\005.XNKJ\\002.Project\\004.GoWSP\\cfg\\tsms_run.json"
 )
 var m_runcfg SxCfgAll
 

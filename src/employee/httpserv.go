@@ -4,13 +4,16 @@ import(
 	"strconv"
 
 	"util"
+	"io/ioutil"
 )
 
 var m_empl sxEmp
+var m_group sxGroup
 
 func init(){
 	http.HandleFunc("/man/getDepart",getDepartment)
 	http.HandleFunc("/man/getMen",getMen)
+	http.HandleFunc("/man/group",manGroup)
 	http.HandleFunc("/man/MenChanged",menChanged)
 	http.HandleFunc("/man/search",search)
 }
@@ -44,6 +47,21 @@ func getMen(t_res http.ResponseWriter,t_ask *http.Request){
 		t_res.Write(bst)
 	}
 }
+
+func manGroup(t_res http.ResponseWriter,t_ask *http.Request){
+	util.L3I("%s %s",t_ask.Method,t_ask.URL.Path)
+
+	if t_ask.Method=="GET"{
+		bst,_:=m_group.getGroup(cst_sepstd)
+		t_res.Write(bst)
+	} else if t_ask.Method=="POST"{
+		bts,err := ioutil.ReadAll(t_ask.Body);if err!=nil{
+			util.L4E("manGroup "+err.Error())
+		}
+		m_group.saveGroup(bts)
+	}
+}
+
 
 func menChanged(t_res http.ResponseWriter,t_ask *http.Request){
 	util.L3I(t_ask.Method)
