@@ -18,6 +18,7 @@ import (
 	"httpserv/servFile"
 	"software"
 	"util"	
+	_ "strategy"
 )
 
 const (

@@ -40,7 +40,11 @@ type sxEmp struct{
 }
 
 type sxGroup struct{
-	ListMan []sxMan `json:"list"`
+	ListMan []sxMan `json:"List"`
+	Num   int      `json:"num"`
+	Path  string   `json:"path"`
+	Sep  string   `json:"sep"`
+	Depth int      `json:"depth"`
 	bload bool
 }
 
@@ -154,31 +158,33 @@ func (p *sxGroup) saveGroup(t_bts []byte)(b_res bool){
 }
 
 //从数据库直接读取分组信息
-func (p *sxGroup) getGroup(t_sep string)(r_bst []byte, r_json string){
+func (p *sxGroup) GetGroup(t_sep string)(r_json string,r_bst []byte){
 	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "readGroup")
 	if !bret {return}
 	defer dbopt.Close()
 
 	//dbopt.Sqlcmd = "SELECT pathx,ukey,email,namex,pwdlogin,gender,priviege FROM employee"
 	p.ListMan = p.ListMan[0:0]
-	dbopt.Sqlcmd = "SELECT a.pathx,a.ukey,a.email,a.namex,a.pwdlogin,a.gender,a.priviege,b.numDev "
+	dbopt.Sqlcmd = "SELECT a.pathx,a.ukey,a.email,a.namex,a.gender,a.priviege,b.numDev "
 	dbopt.Sqlcmd += "FROM employeeGroup a LEFT JOIN terDevBasicInfo b "
 	dbopt.Sqlcmd += "ON a.ukey=b.numUsrKey"
 	if !dbopt.Query() { return }
 	for dbopt.Next() {
 		var ele sxMan
 		var strNum sql.NullString
-		dbopt.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Pwdlogin, &ele.Gender, &ele.Priviege, &strNum)
+		dbopt.Scan(&ele.Path, &ele.Ukey, &ele.Emial, &ele.Name, &ele.Gender, &ele.Priviege, &strNum)
 		ele.NumDev = strNum.String
 		ele.parse()
 		p.ListMan = append(p.ListMan,ele)
 	}
 
-	r_bts,_err := json.Marshal(&p.ListMan);if _err!=nil {
+	var _err error
+	r_bst,_err = json.Marshal(p);if _err!=nil {
 		util.L4E("json.Marshal "+_err.Error())
 	}
 
-	r_json = string(r_bts)
+	r_json = string(r_bst)
+	util.L3I("GetGroup num=%d,size=%d", len(p.ListMan),len(r_bst))
 
 	return
 }

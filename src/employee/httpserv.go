@@ -52,8 +52,11 @@ func manGroup(t_res http.ResponseWriter,t_ask *http.Request){
 	util.L3I("%s %s",t_ask.Method,t_ask.URL.Path)
 
 	if t_ask.Method=="GET"{
-		bst,_:=m_group.getGroup(cst_sepstd)
-		t_res.Write(bst)
+		jsx,bts:=m_group.GetGroup(cst_sepstd)
+		jsx = jsx
+		//t_res.Write([]byte(jsx))
+		util.L3I("jsx=%d,bts=%d",len(jsx),len(bts));
+		t_res.Write(bts)
 	} else if t_ask.Method=="POST"{
 		bts,err := ioutil.ReadAll(t_ask.Body);if err!=nil{
 			util.L4E("manGroup "+err.Error())
