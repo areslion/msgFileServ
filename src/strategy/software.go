@@ -10,12 +10,15 @@ import (
 	// "mime/multipart"
 	// "strconv"
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strings"
+	"io/ioutil"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 import (	
+	//"os"
 	"dbbase"
 	"util"
 )
@@ -45,6 +48,8 @@ type sxRes struct{
 	ListSft sxSftItemList `json:"listSoft"`//策略软件清单
 	ListDev sxDevItemList `json:"listDev"`//策略应用于的终端清单
 	Num string `json:"num"`//策略的ID
+	Name string `json:"name"`//策略名称
+	Cls int `json:"class"`//策略类型 1 为软件白名单 2为软件黑名单
 }
 
 //软件过滤器
@@ -129,13 +134,31 @@ type StrategySoft struct{
 
 }
 
+//按照策略的编号获取策略文件所在的绝对路径
+func (p *StrategySoft)getStrategyPath(t_num string)(r_path string){
+	pcfg := util.GetSftCfg()
+	r_path = pcfg.ServFile.PathSrategy + pcfg.ServFile.Sep + t_num + ".stra"
+	return
+}
+
 //根据软件策略编号获取软件清单信息
 //如果num为空 则从数据库获取软件清单 否则从磁盘的json文件获取策略的详情
-func getSoftList(t_num string)(r_list sxSftItemList){
+func (p *StrategySoft)getSoftList(t_num string)(r_res sxRes,r_bts []byte){
+	path := p.getStrategyPath(t_num)
+	var err error
+	r_bts,err = ioutil.ReadFile(path);if err==nil {
+		util.L4E(path+" "+err.Error())
+	}
+
+	err = json.Unmarshal(r_bts,r_res);if err!=nil{
+		util.L4E("json.Unmarshal(bts,r_res) "+err.Error())
+		return
+	}
+	
 	return
 }
 //从数据库获取清单信息
-func (p *StrategySoft)getSoftListFromDB()(r_list sxSftItemList){
+func (p *StrategySoft)getSoftListFromDB()(r_res sxRes,r_bts []byte){
 	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "read software list")
 	if !bret {return}
 	defer dbopt.Close()
@@ -153,28 +176,101 @@ func (p *StrategySoft)getSoftListFromDB()(r_list sxSftItemList){
 		strRet,bret := filterx.filterx(strName.String);if bret{ continue
 		}
 		ele.Namex = strRet
-		r_list.List = append(r_list.List,ele)
+		r_res.ListSft.List = append(r_res.ListSft.List,ele)
 	}
 
-	util.L3I("softwaare num=%d", len(r_list.List))
+	var err error
+	r_bts,err = json.Marshal(r_res);if err!=nil{
+		util.L4E("json.Marshal(r_res) "+err.Error())
+		return
+	}
+
+	util.L3I("softwaare num=%d", len(r_res.ListSft.List))
 	return
 }
-//从JSON文件获取软件策略详情
-func getSoftRuelDetail(t_num string)(r_list sxSftItemList){
+//获取软件策略
+func (p *StrategySoft)getStrategy(t_num string)(r_res sxRes,r_bts []byte,r_str string){
+	if len(t_num)==0{
+		r_res,r_bts = p.getSoftListFromDB()
+	} else {
+		r_res, r_bts = p.getSoftList(t_num)
+	}
+
+	r_str = string(r_bts)
 	return
 }
+//存储软件策略
+func (p *StrategySoft)saveStrategy(t_bts []byte)(b_ret bool){
+	var strx sxRes
+	err := json.Unmarshal(t_bts,strx);if err!=nil{//change byte to struct
+		util.L4E("json.Unmarshal(t_bts,strx) "+err.Error())
+	}
+
+	if len(strx.Num)!=36 {
+		util.L4E("invalid num(%s) length=%d need=%d",strx.Num,len(strx.Num),36)
+		return
+	}
+
+	path := p.getStrategyPath(strx.Num)
+	_, b_ret = util.SaveFileBytes(path, t_bts);if !b_ret {
+		util.L4E("write software strategy(%s) failed(%s)",strx.Num,path)
+	}
+	
+	b_ret = p.insertDB(strx)
+	
+	return
+}
+
+//将软件策略存储到数据库中的sftRuleAbstract和sftRuleSend两张表中
+func (p *StrategySoft)insertDB(t_stra sxRes)(b_ret bool){
+	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "insert software startegy into db")
+	if !bret {return}
+	defer dbopt.Close()
+
+	dbopt.Sqlcmd = " REPLACE INTO sftRuleAbstract(num,namex,cls) VALUES(?,?,?)"
+	b_ret = dbopt.ExcAlone(t_stra.Num,t_stra.Name,t_stra.Cls);if !b_ret{return}
+	util.L3I("%s replaced into sftRuleAbstract",t_stra.Num)
+
+	dbopt.Sqlcmd = "DELETE FROM sftRuleSend WHERE numRule = ? "
+	b_ret = dbopt.ExcAlone(t_stra.Num);if !b_ret{return}
+	util.L3I("%s deleted into sftRuleAbstract",t_stra.Num)
+
+	dbopt.Sqlcmd = "INSERT INTO sftRuleSend(numRule,numUser,namex,cls,path) VALUES(?,?,?,?,?)"
+	for _,itx:= range t_stra.ListDev.List{
+		bret := dbopt.Exc(t_stra.Num,itx.NumUser,itx.Namex,t_stra.Cls,itx.Path);
+		b_ret = bret||b_ret
+	}
+	util.L3I("%s inserted into sftRuleSend num=%d",t_stra.Num,len(t_stra.ListDev.List))
+
+	return
+}
+
+
+
 
 
 var sftMgr StrategySoft
-func softManager(t_res http.ResponseWriter,t_ask *http.Request){
+//软件策略详情获取和上传路由
+func SoftManager(t_res http.ResponseWriter,t_ask *http.Request){
+	util.L3I(t_ask.Method)
+
+	var bret = true
 	if t_ask.Method=="GET"{
-		sftMgr.getSoftListFromDB()
+		num:=t_ask.FormValue("num")
+		_,r_bts,_ := sftMgr.getStrategy(num)
+		t_res.Write(r_bts)
+	} else if t_ask.Method=="POST" {
+		bts, err := ioutil.ReadAll(t_ask.Body);if err!=nil{
+			util.L4E("ioutil.ReadAll(t_ask.Body) "+err.Error())
+			bret = false
+		} else {
+			bret = sftMgr.saveStrategy(bts)
+		}
 	}
-	return
+
+	if !bret {t_res.WriteHeader(http.StatusNotAcceptable)}
 }
 
-
-
 func init(){
-	http.HandleFunc("/strategy/soft",softManager)
+	http.HandleFunc("/strategy/soft",SoftManager)//软件策略路由
 }

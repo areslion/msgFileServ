@@ -8,8 +8,8 @@ import(
 
 func Test_getSoftListFromDB(t *testing.T){
 	var sft StrategySoft
-	list := sft.getSoftListFromDB()
-	for ix,itx:= range list.List {
+	res,_,_ := sft.getStrategy("")
+	for ix,itx:= range res.ListSft.List {
 		log.Println(ix,itx.Enable,itx.Namex)
 	}
 }
