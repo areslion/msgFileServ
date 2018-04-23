@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"strconv"
 	"io/ioutil"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -43,13 +44,19 @@ type sxDevItem struct{
 type sxDevItemList struct{
 	List []sxDevItem `json:"list"`
 }
+type sxStrategyItem struct {
+	Num string `json:"num"`//策略的ID
+	Name string `json:"name"`//策略名称
+	Cls int `json:"class"`//策略类型 1 为软件白名单 2为软件黑名单
+}
+type sxStrategyList struct{
+	List []sxStrategyItem `json:"list"`
+}
 //软件策略返回结果
 type sxRes struct{
 	ListSft sxSftItemList `json:"listSoft"`//策略软件清单
 	ListDev sxDevItemList `json:"listDev"`//策略应用于的终端清单
-	Num string `json:"num"`//策略的ID
-	Name string `json:"name"`//策略名称
-	Cls int `json:"class"`//策略类型 1 为软件白名单 2为软件黑名单
+	Strategy sxStrategyItem `json:"strategy"`//策略的基本信息
 }
 
 //软件过滤器
@@ -192,11 +199,40 @@ func (p *StrategySoft)getSoftListFromDB()(r_res sxRes,r_bts []byte){
 func (p *StrategySoft)getStrategy(t_num string)(r_res sxRes,r_bts []byte,r_str string){
 	if len(t_num)==0{
 		r_res,r_bts = p.getSoftListFromDB()
-	} else {
+	}else if len(t_num)==2 {
+		cls,err:=strconv.Atoi(t_num);if err!=nil || cls!=-1{
+			util.L4E("strconv.Atoi(%s) %s",t_num,err.Error())
+			return 
+		}
+		_,r_str,r_bts = p.getStrategyList()
+	}else {
 		r_res, r_bts = p.getSoftList(t_num)
 	}
 
 	r_str = string(r_bts)
+	return
+}
+//获取策略清单
+func (p *StrategySoft)getStrategyList()(r_list sxStrategyList,r_json string,r_bts []byte){
+	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "read software startegy list")
+	if !bret {return}
+	defer dbopt.Close()
+
+	dbopt.Sqlcmd = "SELECT num,namex,cls FROM sftRuleAbstract "
+	if !dbopt.Query() { return }
+	for dbopt.Next(){
+		var ele sxStrategyItem
+		dbopt.Scan(&ele.Num,&ele.Name,&ele.Cls)
+		r_list.List = append(r_list.List,ele)
+	}
+
+	var err error
+	r_bts,err = json.Marshal(r_list);if err!=nil{
+		util.L4E("json.Marshal(r_list) "+err.Error())
+	}
+	r_json  = string(r_bts)
+	
+	util.L3I("read software startegy list=%d",len(r_list.List))
 	return
 }
 //存储软件策略
@@ -206,14 +242,14 @@ func (p *StrategySoft)saveStrategy(t_bts []byte)(b_ret bool){
 		util.L4E("json.Unmarshal(t_bts,strx) "+err.Error())
 	}
 
-	if len(strx.Num)!=36 {
-		util.L4E("invalid num(%s) length=%d need=%d",strx.Num,len(strx.Num),36)
+	if len(strx.Strategy.Num)!=36 {
+		util.L4E("invalid num(%s) length=%d need=%d",strx.Strategy.Num,len(strx.Strategy.Num),36)
 		return
 	}
 
-	path := p.getStrategyPath(strx.Num)
+	path := p.getStrategyPath(strx.Strategy.Num)
 	_, b_ret = util.SaveFileBytes(path, t_bts);if !b_ret {
-		util.L4E("write software strategy(%s) failed(%s)",strx.Num,path)
+		util.L4E("write software strategy(%s) failed(%s)",strx.Strategy.Num,path)
 	}
 	
 	b_ret = p.insertDB(strx)
@@ -228,19 +264,19 @@ func (p *StrategySoft)insertDB(t_stra sxRes)(b_ret bool){
 	defer dbopt.Close()
 
 	dbopt.Sqlcmd = " REPLACE INTO sftRuleAbstract(num,namex,cls) VALUES(?,?,?)"
-	b_ret = dbopt.ExcAlone(t_stra.Num,t_stra.Name,t_stra.Cls);if !b_ret{return}
-	util.L3I("%s replaced into sftRuleAbstract",t_stra.Num)
+	b_ret = dbopt.ExcAlone(t_stra.Strategy.Num,t_stra.Strategy.Name,t_stra.Strategy.Cls);if !b_ret{return}
+	util.L3I("%s replaced into sftRuleAbstract",t_stra.Strategy.Num)
 
 	dbopt.Sqlcmd = "DELETE FROM sftRuleSend WHERE numRule = ? "
-	b_ret = dbopt.ExcAlone(t_stra.Num);if !b_ret{return}
-	util.L3I("%s deleted into sftRuleAbstract",t_stra.Num)
+	b_ret = dbopt.ExcAlone(t_stra.Strategy.Num);if !b_ret{return}
+	util.L3I("%s deleted into sftRuleAbstract",t_stra.Strategy.Num)
 
 	dbopt.Sqlcmd = "INSERT INTO sftRuleSend(numRule,numUser,namex,cls,path) VALUES(?,?,?,?,?)"
 	for _,itx:= range t_stra.ListDev.List{
-		bret := dbopt.Exc(t_stra.Num,itx.NumUser,itx.Namex,t_stra.Cls,itx.Path);
+		bret := dbopt.Exc(t_stra.Strategy.Num,itx.NumUser,itx.Namex,t_stra.Strategy.Cls,itx.Path);
 		b_ret = bret||b_ret
 	}
-	util.L3I("%s inserted into sftRuleSend num=%d",t_stra.Num,len(t_stra.ListDev.List))
+	util.L3I("%s inserted into sftRuleSend num=%d",t_stra.Strategy.Num,len(t_stra.ListDev.List))
 
 	return
 }
