@@ -28,7 +28,7 @@ import (
 //软件策略中的软件基本属性
 type sxSftItem struct{
 	Namex string `json:"name"`//软件的名称
-	Enable bool `json:"enable"`//在策略中是否被启用
+	Enable int `json:"enable"`//在策略中是否被启用
 }
 type sxSftItemList struct{
 	List []sxSftItem `json:"list"`
@@ -153,12 +153,29 @@ func (p *StrategySoft)getStrategyPath(t_num string)(r_path string){
 func (p *StrategySoft)getSoftList(t_num string)(r_res sxRes,r_bts []byte){
 	path := p.getStrategyPath(t_num)
 	var err error
-	r_bts,err = ioutil.ReadFile(path);if err==nil {
+	r_bts,err = ioutil.ReadFile(path);if err!=nil {
 		util.L4E(path+" "+err.Error())
+		return
 	}
 
-	err = json.Unmarshal(r_bts,r_res);if err!=nil{
+	err = json.Unmarshal(r_bts,&r_res);if err!=nil{
 		util.L4E("json.Unmarshal(bts,r_res) "+err.Error())
+		return
+	}
+
+	//从本地获取策略的软件清单之后 从数据库全局再次获取并补充到未选中的软件清单中
+	listDB,_ := p.getSoftListFromDB()
+	var keperx string
+	for _,itx := range r_res.ListSft.List {
+		keperx += itx.Namex
+	}
+	for _,itx := range listDB.ListSft.List {
+		if strings.Contains(keperx,itx.Namex)==true {continue}
+		itx.Enable = 0
+		r_res.ListSft.List = append(r_res.ListSft.List,itx)
+	}
+	r_bts,err = json.Marshal(r_res);if err!=nil{//将最新的数据重新整理为Bts格式
+		util.L4E("json.Marshal(bts,r_res) "+err.Error())
 		return
 	}
 	
@@ -183,6 +200,7 @@ func (p *StrategySoft)getSoftListFromDB()(r_res sxRes,r_bts []byte){
 		strRet,bret := filterx.filterx(strName.String);if bret{ continue
 		}
 		ele.Namex = strRet
+		ele.Enable = 0
 		r_res.ListSft.List = append(r_res.ListSft.List,ele)
 	}
 
@@ -238,7 +256,7 @@ func (p *StrategySoft)getStrategyList()(r_list sxStrategyList,r_json string,r_bt
 //存储软件策略
 func (p *StrategySoft)saveStrategy(t_bts []byte)(b_ret bool){
 	var strx sxRes
-	err := json.Unmarshal(t_bts,strx);if err!=nil{//change byte to struct
+	err := json.Unmarshal(t_bts,&strx);if err!=nil{//change byte to struct
 		util.L4E("json.Unmarshal(t_bts,strx) "+err.Error())
 	}
 
@@ -251,6 +269,7 @@ func (p *StrategySoft)saveStrategy(t_bts []byte)(b_ret bool){
 	_, b_ret = util.SaveFileBytes(path, t_bts);if !b_ret {
 		util.L4E("write software strategy(%s) failed(%s)",strx.Strategy.Num,path)
 	}
+	util.L4E("software(%s) saved as",strx.Strategy.Num,path)
 	
 	b_ret = p.insertDB(strx)
 	
@@ -264,11 +283,11 @@ func (p *StrategySoft)insertDB(t_stra sxRes)(b_ret bool){
 	defer dbopt.Close()
 
 	dbopt.Sqlcmd = " REPLACE INTO sftRuleAbstract(num,namex,cls) VALUES(?,?,?)"
-	b_ret = dbopt.ExcAlone(t_stra.Strategy.Num,t_stra.Strategy.Name,t_stra.Strategy.Cls);if !b_ret{return}
+	b_ret = dbopt.Exc(t_stra.Strategy.Num,t_stra.Strategy.Name,t_stra.Strategy.Cls);if !b_ret{return}
 	util.L3I("%s replaced into sftRuleAbstract",t_stra.Strategy.Num)
 
 	dbopt.Sqlcmd = "DELETE FROM sftRuleSend WHERE numRule = ? "
-	b_ret = dbopt.ExcAlone(t_stra.Strategy.Num);if !b_ret{return}
+	b_ret = dbopt.Exc(t_stra.Strategy.Num);if !b_ret{return}
 	util.L3I("%s deleted into sftRuleAbstract",t_stra.Strategy.Num)
 
 	dbopt.Sqlcmd = "INSERT INTO sftRuleSend(numRule,numUser,namex,cls,path) VALUES(?,?,?,?,?)"
