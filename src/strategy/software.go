@@ -141,6 +141,67 @@ type StrategySoft struct{
 
 }
 
+//删除指定的软件策略，并返删除失败的策略的清单
+func (p *StrategySoft)deleteStrategy(t_bts[] byte)(r_bts[] byte){
+	var list sxStrategyList
+	err := json.Unmarshal(t_bts,&list); if err!=nil {
+		util.L4E("json.Unmarshal(t_bts,&list) "+err.Error())
+		r_bts = append(r_bts,t_bts...)
+		return
+	}
+
+	p.deleteStrxFromDB(list)
+	p.deleteStrxFromFile(list)
+
+	// var strAll string
+	// for _,itx := range lstDB.List {
+	// 	strAll += itx.Num + " "
+	// }
+
+
+	// var listFailed sxStrategyList
+	// for _,itx := range list.List{
+	// 	if strings.Index(strAll,itx.Num)==-1 {
+	// 		var ele sxStrategyItem
+	// 		ele.Num = itx.Num
+	// 		listFailed.List = append(listFailed.List,ele)
+	// 	}
+	// }
+
+	// r_bts,err = json.Marshal(&listFailed);if err!=nil{
+	// 	util.L4E("json.Marshal(&listFailed) "+err.Error())
+	// 	return
+	// }
+
+	return
+}
+//从数据库删除指定的软件策略，并返删除失败的策略的清单
+func (p *StrategySoft)deleteStrxFromDB(t_list sxStrategyList)(r_list sxStrategyList){
+	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "delete strategy from db")
+	if !bret {return}
+	defer dbopt.Close()
+
+	for _,itx := range t_list.List{
+		dbopt.Sqlcmd = "DELETE FROM sftRuleAbstract WHERE num=? "
+		dbopt.Exc(itx.Num)
+		dbopt.Sqlcmd = "DELETE FROM sftRuleSend WHERE numRule=? "
+		dbopt.Exc(itx.Num)
+		util.L3I("delete strategy from db "+itx.Num)
+	}
+
+	return
+}
+//从数据库删除指定的软件策略，并返删除失败的策略的清单
+func (p *StrategySoft)deleteStrxFromFile(t_list sxStrategyList)(r_list sxStrategyList){
+	for _,itx := range t_list.List{
+		var pathx = p.getStrategyPath(itx.Num)
+		util.RemoveAll(pathx)
+		util.L3I("delete strategy file "+pathx)
+	}
+	
+	return
+}
+
 //按照策略的编号获取策略文件所在的绝对路径
 func (p *StrategySoft)getStrategyPath(t_num string)(r_path string){
 	pcfg := util.GetSftCfg()
@@ -315,11 +376,17 @@ func SoftManager(t_res http.ResponseWriter,t_ask *http.Request){
 		_,r_bts,_ := sftMgr.getStrategy(num)
 		t_res.Write(r_bts)
 	} else if t_ask.Method=="POST" {
+		opt := t_ask.FormValue("opt")
 		bts, err := ioutil.ReadAll(t_ask.Body);if err!=nil{
 			util.L4E("ioutil.ReadAll(t_ask.Body) "+err.Error())
 			bret = false
 		} else {
-			bret = sftMgr.saveStrategy(bts)
+			if opt=="del"{
+				r_bts := sftMgr.deleteStrategy(bts)
+				t_res.Write(r_bts)
+			} else {
+				bret = sftMgr.saveStrategy(bts)	
+			}
 		}
 	}
 
