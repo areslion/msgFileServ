@@ -46,12 +46,26 @@ func (p* SxCfg_db)GetCntStr()string{
 
 	return cntstr
 }
+
+
+type SxCfg_strategy_sft_ele struct{//软件策略属性
+	Name string `json:"name"`
+}
+type SxCfg_strategy_sft struct{
+	Filter []SxCfg_strategy_sft_ele `json:"filter"`//软件策略中的忽略软件关键字
+	Placer []SxCfg_strategy_sft_ele `json:"placer"`//软件策略中的替换关键字
+}
+type SxCfg_strategy struct{
+	Software SxCfg_strategy_sft `json:"software"`//策略中的软件策略
+}
+
 type sxCfg_serMsg struct{
 	Path string `json:"path"`
 }
 type SxCfgAll struct {
 	ServFile sxCfg_serF `json:"depotSft"`
 	Db SxCfg_db `json:"runcfg"`
+	Strategy SxCfg_strategy `json:"strategy"`//策略
 }
 
 func init(){
@@ -112,3 +126,4 @@ func GetSftCfg()(r_sftCfg *SxCfgAll){
 
 	return
 }
+

@@ -68,32 +68,14 @@ type sxFilter struct{
 
 //func (p *sxEmp) GetLstDepat(t_path, t_sep string) (r_lst []string, r_json string) 
 func (p * sxFilter) init(){	
-	filter := []string{"_CRT_",
-		"AMD ",
-		"Catalyst","Cisco","CryptoKit",
-		"HP ",
-		"IntelliJ",
-		"IntelliJ",
-		"NVIDIA",
-		"Runtime",
-		"Support",
-		"tools",
-		"vs_",
-		" (KB","Chinese (Simplified)","Framework","Visual C++ Compiler",
-		"NET Framework",".NET","Update","for Visual Studio","Intel(R) Processor Graphics",
-		"Microsoft Visual","Microsoft System","Microsoft Web ","Microsoft SQL Server ",
-		"Visual S","Visual F","Visual C","Visual B",
-		"Windows ",
-		"icecap_collection_neutral","tools-freebsd","WinRT Intellisense","Kit SDK ","Windows Runtime ","语言包","Pack"," Help "," (SP",
-		" Component","Java","amd64","Silverlight","Utility","Language","Library","Service","Adobe","Realtek","Sensor","MSI","Tools",
-		"Realtek","(x86)","Toolbar","Intel(R)","icbc","ICBC","Oracle","MySQL","C++"}	
-		p.strFilter = append(p.strFilter,filter...)
-
-		xreplacer :=[]string{"0","1","2","3","4","5","6","7","8","9",".","-","、",
-			"正式版","版本"}
-		p.strPlacer = append(p.strPlacer,xreplacer...)
-
-
+	cfg := util.GetSftCfg()
+	for _,itx:= range cfg.Strategy.Software.Filter {
+		p.strFilter = append(p.strFilter,itx.Name)
+	}
+	for _,itx := range cfg.Strategy.Software.Placer {
+		p.strPlacer = append(p.strPlacer,itx.Name)
+	}
+	
 }
 //查看输入串是否被过滤
 func (p *sxFilter) filtered(t_name string)(b_ret bool){
