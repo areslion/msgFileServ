@@ -9,7 +9,7 @@ import(
 )
 const (
 	Cst_sept = "/"
-	Cst_ver = "version 1.0.0.81 2018-5-10"
+	Cst_ver = "version 1.0.0.82 2018-5-15"
 )
 
 func RemoveAll(t_path string){

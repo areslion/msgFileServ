@@ -257,18 +257,61 @@ func (p *StrategySoft)getSoftListFromDB()(r_res sxRes,r_bts []byte){
 	return
 }
 //获取软件策略
-func (p *StrategySoft)getStrategy(t_num string)(r_res sxRes,r_bts []byte,r_str string){
-	if len(t_num)==0{
+func (p *StrategySoft)getStrategy(t_num string,t_opt int)(r_res sxRes,r_bts []byte,r_str string){
+	sfgCfg := util.GetSftCfg()
+
+	
+	util.L3I("get strategy opt=%d num="+t_num,t_opt)
+	switch t_opt {
+	case 0://获取可以进行筛选的软件清单
 		r_res,r_bts = p.getSoftListFromDB()
-	}else if len(t_num)==2 {
-		cls,err:=strconv.Atoi(t_num);if err!=nil || cls!=-1{
-			util.L4E("strconv.Atoi(%s) %s",t_num,err.Error())
-			return 
-		}
+	case 1://获取所有策略清单
 		_,r_str,r_bts = p.getStrategyList()
-	}else {
+	case 2://获取软件策略忽略和过替换的关键字系列
+		var err error
+			r_bts,err = json.Marshal(sfgCfg.Strategy.Software); if err!=nil{
+				util.L4E("json.Marshal(r_bts,&sfgCfg.Strategy.Software "+err.Error())
+				return
+			}
+	case 3://获取指定终端软件策略，此时num为终端的ID
+		r_bts = p.getDevSoftStrategy(t_num)
+	case 4://获取指定GUID的软件策略的详情，此时num为策略的guid
 		r_res, r_bts = p.getSoftList(t_num)
+	default:
+		util.L4E("undefine value soft?opt=%d",t_opt)
+		return
 	}
+
+
+	// if t_opt==0{
+	// 	r_res,r_bts = p.getSoftListFromDB()
+	// }else if t_opt==1 {
+	// 	num,err := strconv.Atoi(t_num) ; if err!=nil{
+	// 		util.L4E("strconv.Atoi(%s) "+err.Error(),t_num)
+	// 		return
+	// 	}
+
+	// 	switch num {
+	// 	case 1:
+	// 		var err error
+	// 		r_bts,err = json.Marshal(sfgCfg.Strategy.Software); if err!=nil{
+	// 			util.L4E("json.Marshal(r_bts,&sfgCfg.Strategy.Software "+err.Error())
+	// 			return
+	// 		}
+	// 	default:
+	// 		util.L4E("undefine value soft?num=%d",num)
+	// 		return
+	// 	}
+
+	// }else if len(t_num)==2 {
+	// 	cls,err:=strconv.Atoi(t_num);if err!=nil || cls!=-1{
+	// 		util.L4E("strconv.Atoi(%s) %s",t_num,err.Error())
+	// 		return 
+	// 	}
+	// 	_,r_str,r_bts = p.getStrategyList()
+	// }else {
+	// 	r_res, r_bts = p.getSoftList(t_num)
+	// }
 
 	r_str = string(r_bts)
 	return
@@ -296,6 +339,29 @@ func (p *StrategySoft)getStrategyList()(r_list sxStrategyList,r_json string,r_bt
 	util.L3I("read software startegy list=%d",len(r_list.List))
 	return
 }
+//获取t_num指定的终端的软件策略
+func (p *StrategySoft)getDevSoftStrategy(t_num string)(r_bts []byte){
+	dbopt, bret := dbbase.NewSxDB(&util.GetSftCfg().Db, "read software startegy list")
+	if !bret {return}
+	defer dbopt.Close()
+
+	var rulestr string
+	dbopt.Sqlcmd = "SELECT numRule FROM sftRuleSend WHERE numUser=?"
+	dbopt.Query(t_num)
+	for dbopt.Next(){
+		dbopt.Scan(&rulestr)
+		break
+	}
+	if(len(rulestr)<=0){
+		util.L4E("fail to get rule id from db")
+		return
+	}
+
+	_,r_bts = p.getSoftList(rulestr)
+
+	return
+}
+
 //存储软件策略
 func (p *StrategySoft)saveStrategy(t_bts []byte)(b_ret bool){
 	var strx sxRes
@@ -333,6 +399,12 @@ func (p *StrategySoft)insertDB(t_stra sxRes)(b_ret bool){
 	b_ret = dbopt.Exc(t_stra.Strategy.Num);if !b_ret{return}
 	util.L3I("%s deleted into sftRuleAbstract",t_stra.Strategy.Num)
 
+	//将属于该用户的所有软件策略删除 仅保留最新的软件策略
+	dbopt.Sqlcmd = "DELETE FROM sftRuleSend WHERE numUser = ? "
+	for _,itx:= range t_stra.ListDev.List{
+		b_ret = dbopt.Exc(itx.NumUser)
+	}
+
 	dbopt.Sqlcmd = "INSERT INTO sftRuleSend(numRule,numUser,namex,cls,path) VALUES(?,?,?,?,?)"
 	for _,itx:= range t_stra.ListDev.List{
 		bret := dbopt.Exc(t_stra.Strategy.Num,itx.NumUser,itx.Namex,t_stra.Strategy.Cls,itx.Path);
@@ -355,8 +427,15 @@ func SoftManager(t_res http.ResponseWriter,t_ask *http.Request){
 	var bret = true
 	if t_ask.Method=="GET"{
 		num:=t_ask.FormValue("num")
-		_,r_bts,_ := sftMgr.getStrategy(num)
-		t_res.Write(r_bts)
+		opt:=t_ask.FormValue("opt")
+		util.L3I("opt=%s num=%s",opt,num)
+		nopt,err := strconv.Atoi(opt); if err!=nil{
+			util.L4E("strconv.Atoi(%s)",opt)
+			bret = false
+		} else {
+			_,r_bts,_ := sftMgr.getStrategy(num,nopt)
+			t_res.Write(r_bts)
+		}
 	} else if t_ask.Method=="POST" {
 		opt := t_ask.FormValue("opt")
 		bts, err := ioutil.ReadAll(t_ask.Body);if err!=nil{
